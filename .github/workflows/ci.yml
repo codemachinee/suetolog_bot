@@ -61,11 +61,11 @@ jobs:
           key: ${{ secrets.VPS_KEY }}
           script: |
             # Переходим в директорию с проектом
-            cd /root/suetolog-bot
+            cd /root/suetolog_bot
             # Обновляем репозиторий
             git pull origin master
             # Останавливаем и удаляем контейнер с именем suetolog-bot, если он существует
             docker rm -f suetolog-bot || true
             docker rmi -f suetolog-bot || true
             docker build -t suetolog-bot .
-            docker run -d --name suetolog-bot -v /root/suetolog-bot:/app suetolog-bot
+            docker run -d --name suetolog-bot -v /root/suetolog_bot:/app suetolog_bot
