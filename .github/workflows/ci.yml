@@ -63,7 +63,7 @@ jobs:
             # Переходим в директорию с проектом
             cd /root/suetolog_bot
             # Обновляем репозиторий
-            git pull origin master
+            git pull origin main
             # Останавливаем и удаляем контейнер с именем suetolog-bot, если он существует
             docker rm -f suetolog-bot || true
             docker rmi -f suetolog-bot || true
