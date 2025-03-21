@@ -427,7 +427,7 @@ async def chek_message_voice(v):
 
 async def main():
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(pidr, "cron", day_of_week='mon-sun', hour=8)
+    scheduler.add_job(pidr, "cron", day_of_week='mon-sun', hour=8, misfire_grace_time=300)
     # scheduler.add_job(pidr, trigger="interval", seconds=15)
     scheduler.start()
     await dp.start_polling(bot)
