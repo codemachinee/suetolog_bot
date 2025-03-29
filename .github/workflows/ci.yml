@@ -11,17 +11,18 @@ jobs:
 
     steps:
       - name: Checkout репозиторий
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Установка Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version-file: ".python-version"
+
+      - name: установка uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Установка зависимостей
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt  # Устанавливаем зависимости проекта
+        run: uv sync --all-extras --dev
 
       - name: Create config.json from secrets
         run: |
@@ -29,7 +30,7 @@ jobs:
           ${{ secrets.CONFIG_JSON }}
           EOF
 
-      - name: Create config.json from secrets
+      - name: Create passwords.py from secrets
         run: |
           cat <<'EOF' > paswords.py
           ${{ secrets.PASWORDS_PY }}
@@ -43,7 +44,7 @@ jobs:
 
       - name: Запуск тестов
         run: |
-          pytest -m asyncio
+          uv run pytest -v
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,7 +52,7 @@ jobs:
 
     steps:
       - name: Checkout репозиторий
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Вход на сервер по SSH и деплой
         uses: appleboy/ssh-action@master
@@ -68,4 +69,4 @@ jobs:
             docker rm -f suetolog-bot || true
             docker rmi -f suetolog-bot || true
             docker build -t suetolog-bot .
-            docker run -d --name suetolog-bot -v /root/suetolog_bot:/app suetolog-bot
+            docker run -d --name suetolog-bot -v /root/suetolog_bot/paswords.py:/app/paswords.py -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json -v /root/suetolog_bot/loggs.log:/app/loggs.log suetolog-bot
