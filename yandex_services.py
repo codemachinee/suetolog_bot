@@ -6,10 +6,10 @@ import yadisk
 from aiogram import exceptions
 from loguru import logger
 
-from paswords import group_id, yadisk_token, yandex_gpt_api_key, yandex_gpt_catalog_id
+import paswords
 
 saved_messages_davinci = []
-y = yadisk.YaDisk(token=yadisk_token)
+y = yadisk.YaDisk(token=paswords.yadisk_token)
 
 
 class Davinci:
@@ -26,7 +26,7 @@ class Davinci:
             "text": f'{self.text}'})
         message = await self.bot.send_message(self.message.chat.id, 'секунду..')
         prompt = {
-            "modelUri": f"gpt://{yandex_gpt_catalog_id}/yandexgpt",
+            "modelUri": f"gpt://{paswords.yandex_gpt_catalog_id}/yandexgpt",
             "completionOptions": {
                 "stream": False,
                 "temperature": 0.2,
@@ -43,7 +43,7 @@ class Davinci:
         url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Api-Key {yandex_gpt_api_key}"
+            "Authorization": f"Api-Key {paswords.yandex_gpt_api_key}"
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(url, headers=headers, json=prompt, ssl=False) as response:
@@ -64,7 +64,7 @@ class Davinci:
 
 async def Artur_pozdravlyaet(bot, text):
     prompt = {
-        "modelUri": f"gpt://{yandex_gpt_catalog_id}/yandexgpt",
+        "modelUri": f"gpt://{paswords.yandex_gpt_catalog_id}/yandexgpt",
         "completionOptions": {
             "stream": False,
             "temperature": 0.5,
@@ -88,15 +88,15 @@ async def Artur_pozdravlyaet(bot, text):
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Api-Key {yandex_gpt_api_key}"
+        "Authorization": f"Api-Key {paswords.yandex_gpt_api_key}"
     }
     async with aiohttp.ClientSession() as session:
         async with session.post(url, headers=headers, json=prompt, ssl=False) as response:
             try:
                 answer = (await response.json())['result']['alternatives'][0]['message']['text']
-                await bot.send_message(group_id, f'{answer}')
+                await bot.send_message(paswords.group_id, f'{answer}')
             except Exception:
-                await bot.send_message(group_id, "Короче с др брат, ты и так все знаешь.."
+                await bot.send_message(paswords.group_id, "Короче с др брат, ты и так все знаешь.."
                                                  "а эта суета с лишними словами для слабых духом"
                                                  "мы же с тобой сильные... обнял")
 
