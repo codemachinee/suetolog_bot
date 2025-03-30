@@ -53,7 +53,7 @@ async def pidr():
             file1 = FSInputFile(r"Я.jpg", 'rb')
             y = ("Игорь", file1)
             await value_plus_one('A2')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -63,7 +63,7 @@ async def pidr():
             file1 = FSInputFile(r"Филч.jpg", 'rb')
             y = ("Филч", file1)
             await value_plus_one('A1')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -73,7 +73,7 @@ async def pidr():
             file1 = FSInputFile(r"Серега.jpg", 'rb')
             y = ("Серега", file1)
             await value_plus_one('A3')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -83,7 +83,7 @@ async def pidr():
             file1 = FSInputFile(r"Леха.jpg", 'rb')
             y = ("Леха(Demix)", file1)
             await value_plus_one('A5')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -93,7 +93,7 @@ async def pidr():
             file1 = FSInputFile(r"фитиль.jpg", 'rb')
             y = ("Леха(Фитиль)", file1)
             await value_plus_one('A6')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -103,7 +103,7 @@ async def pidr():
             file1 = FSInputFile(r"маугли.jpg", 'rb')
             y = ("Диман", file1)
             await value_plus_one('A7')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -113,7 +113,7 @@ async def pidr():
             file1 = FSInputFile(r"саня.jpg", 'rb')
             y = ("Саня", file1)
             await value_plus_one('A4')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -123,7 +123,7 @@ async def pidr():
             file1 = FSInputFile(r"Кирилл.jpg", 'rb')
             y = ("Кирюха подкастер", file1)
             await value_plus_one('A8')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -133,7 +133,7 @@ async def pidr():
             file1 = FSInputFile(r"Женек.jpg", 'rb')
             y = ("Женек спасатель", file1)
             await value_plus_one('A9')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -143,7 +143,7 @@ async def pidr():
             file1 = FSInputFile(r"Евгений.png", 'rb')
             y = ("Женек старый", file1)
             await value_plus_one('A10')
-            await bot.send_photo(group_id, y[1], request_timeout=60)
+            await bot.send_photo(group_id, y[1], request_timeout=300)
             await bot.send_message(group_id, f'{await celebrate_day()}\n'
                                              f'{datetime.now().day}.{datetime.now().month}.{datetime.now().year} '
                                              f'объявляется {y[0]}\nСправка по боту: /help')
@@ -427,7 +427,7 @@ async def chek_message_voice(v):
 
 async def main():
     scheduler = AsyncIOScheduler()
-    scheduler.add_job(pidr, "cron", day_of_week='mon-sun', hour=8, misfire_grace_time=300)
+    scheduler.add_job(pidr, "cron", day_of_week='mon-sun', hour=8, misfire_grace_time=700)
     # scheduler.add_job(pidr, trigger="interval", seconds=15)
     scheduler.start()
     await dp.start_polling(bot)
