@@ -1,12 +1,13 @@
-import aiohttp
-import yadisk
-from aiogram import exceptions
 # библиотека проверки даты
 from datetime import datetime
 
+import aiohttp
+import yadisk
+from aiogram import exceptions
 from loguru import logger
 
-from paswords import*
+from paswords import group_id, yadisk_token, yandex_gpt_api_key, yandex_gpt_catalog_id
+
 saved_messages_davinci = []
 y = yadisk.YaDisk(token=yadisk_token)
 
@@ -23,7 +24,7 @@ class Davinci:
         saved_messages_davinci.insert(len(saved_messages_davinci) + 1, {
             "role": "user",
             "text": f'{self.text}'})
-        message = await self.bot.send_message(self.message.chat.id, f'секунду..')
+        message = await self.bot.send_message(self.message.chat.id, 'секунду..')
         prompt = {
             "modelUri": f"gpt://{yandex_gpt_catalog_id}/yandexgpt",
             "completionOptions": {
@@ -35,9 +36,9 @@ class Davinci:
         }
         prompt['messages'] = {
             "role": "system",
-            "text": f"Ты Давинчи, бот помощник знающий ответы на все вопросы. Ты даешь краткий и лаконичный "
-                    f"ответ на любые вопросы, а также способен найти запрашиваемое в интернете. Ты максимально "
-                    f"вежлив и учтив."
+            "text": "Ты Давинчи, бот помощник знающий ответы на все вопросы. Ты даешь краткий и лаконичный "
+                    "ответ на любые вопросы, а также способен найти запрашиваемое в интернете. Ты максимально "
+                    "вежлив и учтив."
         }, *saved_messages_davinci
         url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         headers = {
@@ -72,10 +73,10 @@ async def Artur_pozdravlyaet(bot, text):
         "messages": [
             {
                 "role": "system",
-                "text": f"Ты Артур, бот который профессионально в сатирической форме, развернуто поздравляет с днем "
-                        f"рождения"
-                        f" и обязательно дерзко пошутишь над виновником торжества. Ты всегда "
-                        f"обращаешься к поздравляемым на 'Ты'."
+                "text": "Ты Артур, бот который профессионально в сатирической форме, развернуто поздравляет с днем "
+                        "рождения"
+                        " и обязательно дерзко пошутишь над виновником торжества. Ты всегда "
+                        "обращаешься к поздравляемым на 'Ты'."
             },
             {
                 "role": "user",

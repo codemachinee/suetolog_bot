@@ -1,18 +1,37 @@
+import asyncio
 import json
+from datetime import datetime
+from random import choice
 
 import aiofiles  # -*- coding: utf-8 -*-
 from aiogram import Bot, Dispatcher, F, types
-import asyncio
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, Message
+from aiogram.types import (
+    CallbackQuery,
+    FSInputFile,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+)
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from random import *
-from functions_file import value_plus_one, pstat, obnulenie_stat, ball_of_fate, celebrate_day
-from FSM import step_message
-from SaluteSpeech import *
-from yandex_services import *
 from loguru import logger
+
+from FSM import step_message
+from functions_file import (
+    ball_of_fate,
+    celebrate_day,
+    obnulenie_stat,
+    pstat,
+    value_plus_one,
+)
+from paswords import admin_id, group_id, loggs_acc, major_suetolog
+from SaluteSpeech import (
+    Artur,
+    Artur_happy_birthday,
+    save_audio,
+)
+from yandex_services import Davinci, YaDisk
 
 # token = lemonade
 # token = codemashine_test
@@ -177,10 +196,10 @@ async def check_callback(callback: CallbackQuery):
         if callback.data == 'bof':
             start_file = FSInputFile(r"ball/start_image.png", 'rb')
             await bot.send_photo(callback.message.chat.id, start_file, request_timeout=60)
-            await bot.send_message(callback.message.chat.id, f'Решил попытать удачу или просто переложить '
-                                                             f'ответственность? Что ж.. Чтобы все прошло как надо '
-                                                             f'просто переведи сотку моему создателю на сбер и '
-                                                             f'погладь шар')
+            await bot.send_message(callback.message.chat.id, 'Решил попытать удачу или просто переложить '
+                                                             'ответственность? Что ж.. Чтобы все прошло как надо '
+                                                             'просто переведи сотку моему создателю на сбер и '
+                                                             'погладь шар')
             kb1 = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1, keyboard=[
                 [types.KeyboardButton(text='Погладить шар')],
                 [types.KeyboardButton(text='Шар съебись')]])
@@ -217,37 +236,36 @@ async def check_callback(callback: CallbackQuery):
 @dp.message(Command(commands='help'))
 async def help(message):
     if message.chat.id == admin_id:
-        await bot.send_message(message.chat.id, (f'Основные команды поддерживаемые ботом:\n'
-                                                 f'/orel - вызвать орловского помощника,\n'
-                                                 f'/pidorstat - пидорский рейтинг,\n'
-                                                 f'/start - инициализация бота,\n'
-                                                 f'/help - справка по боту,\n'
-                                                 f'/test - тестирование бота.\n'
-                                                 f'/sent_message - отправка сообщения в группу.\n\n'
-                                                 f'Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n'
-                                                 f'Для перевода воиса(длительность до 1 мин.) в текст ответьте на него '
-                                                 f'словом "давинчи" или перешлите в личку боту.\n\n'
-                                                 f'Для отправки фото/видео/документа в общую папку на яндекс отправьте '
-                                                 f'необходимые файлы в личку боту.'))
+        await bot.send_message(message.chat.id, ('Основные команды поддерживаемые ботом:\n'
+                                                 '/orel - вызвать орловского помощника,\n'
+                                                 '/pidorstat - пидорский рейтинг,\n'
+                                                 '/start - инициализация бота,\n'
+                                                 '/help - справка по боту,\n'
+                                                 '/test - тестирование бота.\n'
+                                                 '/sent_message - отправка сообщения в группу.\n\n'
+                                                 'Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n'
+                                                 'Для перевода воиса(длительность до 1 мин.) в текст ответьте на него '
+                                                 'словом "давинчи" или перешлите в личку боту.\n\n'
+                                                 'Для отправки фото/видео/документа в общую папку на яндекс отправьте '
+                                                 'необходимые файлы в личку боту.'))
     else:
-        await bot.send_message(message.chat.id, (f'Основные команды поддерживаемые ботом:\n'
-                                                 f'/orel - вызвать орловского помощника,\n'
-                                                 f'/pidorstat - пидорский рейтинг,\n'
-                                                 f'/start - инициализация бота,\n'
-                                                 f'/help - справка по боту,\n'
-                                                 f'/test - тестирование бота.\n\n'
-                                                 f'Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n'
-                                                 f'Для перевода воиса(длительность до 1 мин.) в текст ответьте на него '
-                                                 f'словом "давинчи" или перешлите в личку боту.\n\n'
-                                                 f'Для отправки фото/видео/документа в общую папку на яндекс отправьте '
-                                                 f'необходимые файлы в личку боту.'))
+        await bot.send_message(message.chat.id, ('Основные команды поддерживаемые ботом:\n'
+                                                 '/orel - вызвать орловского помощника,\n'
+                                                 '/pidorstat - пидорский рейтинг,\n'
+                                                 '/start - инициализация бота,\n'
+                                                 '/help - справка по боту,\n'
+                                                 '/test - тестирование бота.\n\n'
+                                                 'Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n'
+                                                 'Для перевода воиса(длительность до 1 мин.) в текст ответьте на него '
+                                                 'словом "давинчи" или перешлите в личку боту.\n\n'
+                                                 'Для отправки фото/видео/документа в общую папку на яндекс отправьте '
+                                                 'необходимые файлы в личку боту.'))
 
 
 @dp.message(Command(commands='start'))
 async def start(message):
     await bot.send_message(message.chat.id, '''Бот уже инициализирован.
-Я работаю по расписанию. Пидр дня назначается ежедневно 
-в 11:00 по московскому времени
+Я работаю по расписанию. Пидр дня назначается ежедневно в 11:00 по московскому времени
 
 /help - справка по боту''')
 
@@ -439,5 +457,5 @@ if __name__ == '__main__':
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.exception('выключение бота')
-        asyncio.run(bot.send_message(loggs_acc, f'выключение бота'))
+        asyncio.run(bot.send_message(loggs_acc, 'выключение бота'))
 

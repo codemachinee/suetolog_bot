@@ -1,12 +1,10 @@
-import json
 import os
 import sys
 
-import aiofiles
 import aiohttp
 import pytest
 
-from paswords import yandex_gpt_catalog_id, yandex_gpt_api_key
+from paswords import yandex_gpt_api_key, yandex_gpt_catalog_id
 from yandex_services import y
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # нужно для норм видимости коневой папки
@@ -80,7 +78,7 @@ async def test_yagpt():
         },
         "messages": [{
             "role": "system",
-            "text": f"тест"
+            "text": "тест"
         }]
     }
     url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"

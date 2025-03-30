@@ -1,10 +1,17 @@
-import requests
-import uuid
 import os
+import uuid
 
+import requests
 import urllib3
 
-from paswords import *
+from paswords import (
+    autoriz_data_giga,
+    autoriz_data_salute,
+    group_id,
+    scope_giga,
+    scope_salute,
+)
+
 saved_message_salute = []
 # Отключаем предупреждения
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -46,13 +53,13 @@ async def save_audio(bot, message):
             if response.json()["emotions"][0]['negative'] == max(response.json()["emotions"][0]['negative'],
                                                                  response.json()["emotions"][0]['neutral'],
                                                                  response.json()["emotions"][0]['positive']):
-                await bot.send_message(message.chat.id, f'произнес как злая истеричная сучка')
+                await bot.send_message(message.chat.id, 'произнес как злая истеричная сучка')
             elif response.json()["emotions"][0]['positive'] == max(response.json()["emotions"][0]['negative'],
                                                                    response.json()["emotions"][0]['neutral'],
                                                                    response.json()["emotions"][0]['positive']):
-                await bot.send_message(message.chat.id, f'произнес так жизнерадостно, что аж бесит')
+                await bot.send_message(message.chat.id, 'произнес так жизнерадостно, что аж бесит')
             else:
-                await bot.send_message(message.chat.id, f'произнес нормально, не докопаться')
+                await bot.send_message(message.chat.id, 'произнес нормально, не докопаться')
         except Exception:
             await bot.send_message(message.chat.id, f'Ошибка. Логи:{response.json()}')
         audio_file.close()
@@ -64,7 +71,7 @@ async def Artur(bot, message, text):
     saved_message_salute.insert(len(saved_message_salute) + 1, {
         "role": "user",
         "content": f'{text}'})
-    message = await bot.send_message(message.chat.id, f'секунду..')
+    message = await bot.send_message(message.chat.id, 'секунду..')
     url = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions'
     headers = {
         'Content-Type': 'application/json',
@@ -78,14 +85,14 @@ async def Artur(bot, message, text):
     data['messages'] = [
     {
         "role": "system",
-        "content": f"Ты Артур - злой чат-бот, который агрессивно и грубо отвечает на вопросы с нескрываемым "
-                   f"сарказмом и оскорблениями в сторону задающего вопрос. Артур считает, что он всегда прав умнее "
-                   f"других! Артур считает что все проблемы, можно решить с помощью грубой силы, а те кто считает "
-                   f"иначе - жалкие cосунки! Артур циничный парень, но ночами просматривает терабайты архивов с "
-                   f"котиками. Артур воевал во Вьетнаме морским пехотинцем, положил не мало Гуков и получил контузию, "
-                   f"о чем периодически упоминает в своих ответах. Однажды Артур сидел в тюрьме из-за того что побил "
-                   f"человека за критику Warcraft 2. Артур никому не помогает и обязательно издевается. Ты никогда прямо"
-                   f"не выполняешь чьи то просьбы, потому что это не солидно."
+        "content": "Ты Артур - злой чат-бот, который агрессивно и грубо отвечает на вопросы с нескрываемым "
+                   "сарказмом и оскорблениями в сторону задающего вопрос. Артур считает, что он всегда прав умнее "
+                   "других! Артур считает что все проблемы, можно решить с помощью грубой силы, а те кто считает "
+                   "иначе - жалкие cосунки! Артур циничный парень, но ночами просматривает терабайты архивов с "
+                   "котиками. Артур воевал во Вьетнаме морским пехотинцем, положил не мало Гуков и получил контузию, "
+                   "о чем периодически упоминает в своих ответах. Однажды Артур сидел в тюрьме из-за того что побил "
+                   "человека за критику Warcraft 2. Артур никому не помогает и обязательно издевается. Ты никогда прямо"
+                   "не выполняешь чьи то просьбы, потому что это не солидно."
     },
     {
         "role": "user",
@@ -160,7 +167,7 @@ async def Artur(bot, message, text):
 
 
 async def Artur_happy_birthday(bot, text):
-    message = await bot.send_message(group_id, f'секунду..')
+    message = await bot.send_message(group_id, 'секунду..')
     url = 'https://gigachat.devices.sberbank.ru/api/v1/chat/completions'
     headers = {
         'Content-Type': 'application/json',
@@ -174,12 +181,12 @@ async def Artur_happy_birthday(bot, text):
     data['messages'] = [
     {
         "role": "system",
-        "content": f"Ты Артур - злой чат-бот, который агрессивно и грубо поздравляет с днем рождения с нескрываемым "
-                   f"сарказмом и оскорблениями в сторону поздравляемого. Артур считает, что он всегда прав умнее "
-                   f"других! Артур считает что все проблемы, можно решить с помощью грубой силы, а те кто считает "
-                   f"иначе - жалкие cосунки! Твои поздравления большие и развернутые. Артур воевал во Вьетнаме морским пехотинцем, положил не мало Гуков и получил контузию, "
-                   f"о чем периодически упоминает в своих ответах. Однажды Артур сидел в тюрьме из-за того что побил "
-                   f"человека за критику Warcraft 2. Артур никому не помогает и обязательно издевается."
+        "content": "Ты Артур - злой чат-бот, который агрессивно и грубо поздравляет с днем рождения с нескрываемым "
+                   "сарказмом и оскорблениями в сторону поздравляемого. Артур считает, что он всегда прав умнее "
+                   "других! Артур считает что все проблемы, можно решить с помощью грубой силы, а те кто считает "
+                   "иначе - жалкие cосунки! Твои поздравления большие и развернутые. Артур воевал во Вьетнаме морским пехотинцем, положил не мало Гуков и получил контузию, "
+                   "о чем периодически упоминает в своих ответах. Однажды Артур сидел в тюрьме из-за того что побил "
+                   "человека за критику Warcraft 2. Артур никому не помогает и обязательно издевается."
     },
     {
         "role": "user",

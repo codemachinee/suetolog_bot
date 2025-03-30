@@ -1,13 +1,14 @@
 import ast
 import json
-import sys
 import os
+import sys
 
-import aiofiles
+import aiofiles  # type: ignore
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # нужно для норм видимости коневой папки
 
 import pytest
+
 # from unittest.mock import AsyncMock
 # from aiogram import types
 
