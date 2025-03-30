@@ -46,7 +46,7 @@ jobs:
         run: |
           uv run pytest -v
 
-  build_and_push:
+  build_and_push_in_GHCR:
     runs-on: ubuntu-latest
     needs: test
 
@@ -84,12 +84,18 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-            # Переходим в директорию с проектом
-            cd /root/suetolog_bot
-            # Обновляем репозиторий
-            git pull origin main
-            # Останавливаем и удаляем контейнер с именем suetolog-bot, если он существует
+            # Входим в GHCR
+            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+
+            # Останавливаем и удаляем старый контейнер, если он есть
             docker rm -f suetolog-bot || true
-            docker rmi -f suetolog-bot || true
-            docker build -t suetolog-bot .
-            docker run -d --name suetolog-bot -v /root/suetolog_bot/paswords.py:/app/paswords.py -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json -v /root/suetolog_bot/loggs.log:/app/loggs.log suetolog-bot
+            # Полная очистка кэша, образов и ненужных данных
+            docker system prune -af --volumes
+            # Запускаем контейнер, НЕ ХРАНЯ образ на VPS
+            docker run -d \
+              --name suetolog-bot \
+              --pull always \
+              -v /root/suetolog_bot/paswords.py:/app/paswords.py \
+              -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
+              -v /root/suetolog_bot/loggs.log:/app/loggs.log \
+              ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
