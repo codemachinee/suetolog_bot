@@ -92,10 +92,10 @@ jobs:
             # Полная очистка кэша, образов и ненужных данных
             docker system prune -af --volumes
             # Запускаем контейнер, НЕ ХРАНЯ образ на VPS
-            docker run -d \
-              --name suetolog-bot \
-              --pull=always \
-              -v /root/suetolog_bot/paswords.py:/app/paswords.py \
-              -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
-              -v /root/suetolog_bot/loggs.log:/app/loggs.log \
-              ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+            docker run --pull=always -d \
+            --name suetolog-bot \
+            -v /root/suetolog_bot/paswords.py:/app/paswords.py \
+            -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
+            -v /root/suetolog_bot/loggs.log:/app/loggs.log \
+            ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+
