@@ -89,10 +89,9 @@ jobs:
 
             # Останавливаем и удаляем старый контейнер, если он есть
             docker rm -f suetolog-bot || true
-            docker rmi -f suetolog-bot || true
             # Полная очистка кэша, образов и ненужных данных
             docker system prune -af --volumes
-            # Запускаем контейнер, НЕ ХРАНЯ образ на VPS
+            # Запускаем контейнер
             docker run --pull=always -d \
             --name suetolog-bot \
             -v /root/suetolog_bot/paswords.py:/app/paswords.py \
