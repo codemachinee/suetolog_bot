@@ -11,9 +11,6 @@ import pytest
 @pytest.mark.asyncio
 async def test_value_plus_one():
     try:
-        with open('pidor-of-the-day-af3dd140b860.json', 'r') as f:
-            content = f.read()
-            print("Содержимое файла JSON:\n", content)
         gc = gspread.service_account(filename='pidor-of-the-day-af3dd140b860.json')
         # Пытаемся открыть таблицу "bot_statistic"
         sh = gc.open("bot_statistic")
