@@ -325,14 +325,14 @@ async def chek_message(message):
     try:
         sosal_list = ['да', 'Да', 'Конечно', 'конечно', 'Очень', 'очень', 'Сильно', 'сильно', "Великолепно", "великолепно",
                       'Это было великолепно', 'это было великолепно', 'волшебно', 'Волшебно', "Потрясающе",
-                      "потрясающе", "Нет", "нет"]
-        if message.reply_to_message and message.text in sosal_list:
-            if message.reply_to_message.from_user.is_bot is True:
-                if message.text == 'Нет' or message.text == 'нет':
-                    await message.reply('Пидора ответ')
-                else:
-                    await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
+                      "потрясающе", "Хорошее", "хорошее"]
+        if message.reply_to_message and message.reply_to_message.from_user.is_bot is True:
+            if 'Нет' in message.text or 'нет' in message.text:
+                await message.reply('Пидора ответ')
             else:
+                for i in sosal_list:
+                    if i in message.text:
+                        await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
                 pass
         elif message.text == 'Погладить шар':
             await bot.send_photo(message.chat.id, await ball_of_fate(), request_timeout=60)
@@ -364,15 +364,15 @@ async def chek_message(message):
         elif 'Артур' in message.text:
             b = str(message.text).replace('Артур ', '', 1).replace('Артур, ', '', 1).replace('Артур,', '', 1).replace(
                 ' Артур', '', 1)
-            if message.reply_to_message and b in sosal_list:
+            if message.reply_to_message and message.reply_to_message.from_user.is_bot is True:
                 try:
-                    if message.reply_to_message.from_user.is_bot is True:
-                        if b == 'Нет' or b == 'нет':
-                            await message.reply('Пидора ответ')
-                        else:
-                            await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
+                    if 'Нет' in b or 'нет' in b:
+                        await message.reply('Пидора ответ')
                     else:
-                        await Artur(bot, message, b)
+                        for i in sosal_list:
+                            if i in message.text:
+                                await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
+                        pass
                 except AttributeError:
                     await Artur(bot, message, b)
             else:
@@ -380,15 +380,15 @@ async def chek_message(message):
         elif 'артур' in message.text:
             b = str(message.text).replace('артур ', '', 1).replace('артур, ', '', 1).replace('артур,', '', 1).replace(
                 ' артур', '', 1)
-            if message.reply_to_message and b in sosal_list:
+            if message.reply_to_message and message.reply_to_message.from_user.is_bot is True:
                 try:
-                    if message.reply_to_message.from_user.is_bot is True:
-                        if b == 'Нет' or b == 'нет':
-                            await message.reply('Пидора ответ')
-                        else:
-                            await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
+                    if 'Нет' in b or 'нет' in b:
+                        await message.reply('Пидора ответ')
                     else:
-                        await Artur(bot, message, b)
+                        for i in sosal_list:
+                            if i in message.text:
+                                await bot.edit_message_text('Сосал?', message.chat.id, message.reply_to_message.message_id)
+                        pass
                 except AttributeError:
                     await Artur(bot, message, b)
             else:
