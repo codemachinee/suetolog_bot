@@ -1,7 +1,9 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # нужно для норм видимости коневой папки
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)  # нужно для норм видимости коневой папки
 
 import gspread
 import pytest
@@ -11,7 +13,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_value_plus_one():
     try:
-        gc = gspread.service_account(filename='pidor-of-the-day-af3dd140b860.json')
+        gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
         # Пытаемся открыть таблицу "bot_statistic"
         sh = gc.open("bot_statistic")
 

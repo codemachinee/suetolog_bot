@@ -5,7 +5,9 @@ import sys
 
 import aiofiles  # type: ignore
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # нужно для норм видимости коневой папки
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)  # нужно для норм видимости коневой папки
 
 import pytest
 
@@ -48,22 +50,41 @@ import pytest
 async def test_pidr():
     # Директория, где должны быть файлы
     # Парсит Python-файл и извлекает названия изображений из FSInputFile() в функции pidr().
-    with open('main.py', "r", encoding="utf-8") as file:
-        tree = ast.parse(file.read(), filename='main.py')  # Разбираем код в AST
+    with open("main.py", "r", encoding="utf-8") as file:
+        tree = ast.parse(file.read(), filename="main.py")  # Разбираем код в AST
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "FSInputFile":
-            if isinstance(node.args[0], ast.Constant):  # Проверяем, что переданный аргумент — строка
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "FSInputFile"
+        ):
+            if isinstance(
+                node.args[0], ast.Constant
+            ):  # Проверяем, что переданный аргумент — строка
                 if "ball" in node.args[0].value:
                     pass
                 else:
-                    assert os.path.isfile(node.args[0].value), f"Файл {node.args[0].value} отсутствует в папке проекта"
+                    assert os.path.isfile(node.args[0].value), (
+                        f"Файл {node.args[0].value} отсутствует в папке проекта"
+                    )
 
 
 @pytest.mark.asyncio
 async def test_dr():
-    test_dr_list = ['6.3', '20.4', "27.4", '5.5', "19.5", "15.6", "14.7", "16.7", "8.9", "17.11"]
-    async with aiofiles.open('dr.json', "r", encoding="utf-8") as file:
+    test_dr_list = [
+        "6.3",
+        "20.4",
+        "27.4",
+        "5.5",
+        "19.5",
+        "15.6",
+        "14.7",
+        "16.7",
+        "8.9",
+        "17.11",
+    ]
+    async with aiofiles.open("dr.json", "r", encoding="utf-8") as file:
         content = await file.read()
         data = json.loads(content)
         for i in test_dr_list:

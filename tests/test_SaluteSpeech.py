@@ -1,7 +1,9 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))) # нужно для норм видимости коневой папки
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+)  # нужно для норм видимости коневой папки
 
 
 # @pytest.mark.skip(reason="Этот тест запускается только вручную")
