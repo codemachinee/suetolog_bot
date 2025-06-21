@@ -660,7 +660,7 @@ async def main():
     )
     # scheduler.add_job(pidr, trigger="interval", seconds=15)
     scheduler.start()
-    await dp.start_polling(bot)
+    await dp.start_polling(bot, polling_timeout=20)
 
 
 if __name__ == "__main__":
