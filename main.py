@@ -53,41 +53,6 @@ logger.add(
     diagnose=True,  # Подробный вывод
 )
 
-kb1 = InlineKeyboardMarkup(
-    inline_keyboard=[
-        [
-            InlineKeyboardButton(
-                text="Купить билет в Орёл",
-                url="https://жд-билеты.сайт/kupit-zhd-bilety/#/moskva/orel?",
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="Бронь стола на Привале", url="http://onmap.uz/tel/74862484006"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="Бронь стола 7 пятниц", url="http://onmap.uz/tel/74862490008"
-            )
-        ],
-        [
-            InlineKeyboardButton(
-                text="Бронь стола Шаривари", url="http://onmap.uz/tel/74862445303"
-            )
-        ],
-        # [InlineKeyboardButton(text='Форма расходов', url='https://forms.gle/MEesbSSkTfpztRrr7')],
-        [
-            InlineKeyboardButton(
-                text="Яндекс.Диск",
-                url="https://disk.yandex.ru/client/disk/бот%20суетологов/суетологи",
-            )
-        ],
-        [InlineKeyboardButton(text="Шар судьбы", callback_data="bof")],
-        [InlineKeyboardButton(text="Эротический массаж", url="https://egoiste57.ru")],
-    ]
-)
-
 
 async def pidr():
     try:
@@ -378,7 +343,6 @@ async def help(message):
             message.chat.id,
             (
                 "Основные команды поддерживаемые ботом:\n"
-                "/orel - вызвать орловского помощника,\n"
                 "/pidorstat - пидорский рейтинг,\n"
                 "/start - инициализация бота,\n"
                 "/help - справка по боту,\n"
@@ -401,11 +365,6 @@ async def start(message):
 
 /help - справка по боту""",
     )
-
-
-@dp.message(Command(commands="orel"))
-async def orel(message):
-    await bot.send_message(message.chat.id, "Орловский помощник..", reply_markup=kb1)
 
 
 @dp.message(Command(commands="pidorstat"))
