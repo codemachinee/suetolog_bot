@@ -11,4 +11,4 @@ logs/
 *.log
 .dockerignore
 .env
-gemini.md
+GEMENI.md

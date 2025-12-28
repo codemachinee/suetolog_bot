@@ -99,4 +99,5 @@ ENV/
 # mypy
 .mypy_cache/
 .env
-gemini.md
+GEMENI.md
+.DS_Store
