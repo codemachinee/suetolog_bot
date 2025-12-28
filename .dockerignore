@@ -10,3 +10,5 @@ venv/
 logs/
 *.log
 .dockerignore
+.env
+gemini.md
