@@ -215,111 +215,120 @@ async def dr():
 
 
 @dp.callback_query(F.data)
-async def check_callback(callback: CallbackQuery):
+async def check_callback(callback: CallbackQuery, state: FSMContext):
+    await state.clear()
     try:
         if callback.data == "bof":
-            start_file = FSInputFile(r"ball/start_image.png", "rb")
-            await bot.send_photo(
-                callback.message.chat.id, start_file, request_timeout=60
-            )
-            await bot.send_message(
-                callback.message.chat.id,
-                "Решил попытать удачу или просто переложить "
-                "ответственность? Что ж.. Чтобы все прошло как надо "
-                "просто переведи сотку моему создателю на сбер и "
-                "погладь шар",
-            )
-            kb1 = types.ReplyKeyboardMarkup(
-                resize_keyboard=True,
-                row_width=1,
-                keyboard=[
-                    [types.KeyboardButton(text="Погладить шар")],
-                    [types.KeyboardButton(text="Шар съебись")],
-                ],
-            )
-            await bot.send_message(callback.message.chat.id, "...", reply_markup=kb1)
+            if callback.message:
+                start_file = FSInputFile(r"ball/start_image.png", "rb")
+                await bot.send_photo(
+                    callback.message.chat.id, start_file, request_timeout=60
+                )
+                await bot.send_message(
+                    callback.message.chat.id,
+                    "Решил попытать удачу или просто переложить "
+                    "ответственность? Что ж.. Чтобы все прошло как надо "
+                    "просто переведи сотку моему создателю на сбер и "
+                    "погладь шар",
+                )
+                kb1 = types.ReplyKeyboardMarkup(
+                    resize_keyboard=True,
+                    row_width=1,
+                    keyboard=[
+                        [types.KeyboardButton(text="Погладить шар")],
+                        [types.KeyboardButton(text="Шар съебись")],
+                    ],
+                )
+                await bot.send_message(callback.message.chat.id, "...", reply_markup=kb1)
         elif callback.data == "stat_day":
-            load_message = await bot.edit_message_text(
-                "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
-            )
-            kb2 = types.InlineKeyboardMarkup(
-                row_width=1,
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по месяцам", callback_data="stat_month"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по годам", callback_data="stat_year"
-                        )
-                    ],
-                ],
-            )
-            await bot.edit_message_text(
-                await pstat("A"), callback.message.chat.id, load_message.message_id
-            )
-            await bot.edit_message_reply_markup(
-                callback.message.chat.id, callback.message.message_id, reply_markup=kb2
-            )
+            if callback.message:
+                load_message = await bot.edit_message_text(
+                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                )
+                if isinstance(load_message, Message):
+                    kb2 = types.InlineKeyboardMarkup(
+                        row_width=1,
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по месяцам", callback_data="stat_month"
+                                )
+                            ],
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по годам", callback_data="stat_year"
+                                )
+                            ],
+                        ],
+                    )
+                    await bot.edit_message_text(
+                        await pstat("A"), callback.message.chat.id, load_message.message_id
+                    )
+                    await bot.edit_message_reply_markup(
+                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                    )
         elif callback.data == "stat_month":
-            load_message = await bot.edit_message_text(
-                "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
-            )
-            kb2 = InlineKeyboardMarkup(
-                row_width=1,
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по дням", callback_data="stat_day"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по годам", callback_data="stat_year"
-                        )
-                    ],
-                ],
-            )
-            await bot.edit_message_text(
-                await pstat("C"), callback.message.chat.id, load_message.message_id
-            )
-            await bot.edit_message_reply_markup(
-                callback.message.chat.id, callback.message.message_id, reply_markup=kb2
-            )
+            if callback.message:
+                load_message = await bot.edit_message_text(
+                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                )
+                if isinstance(load_message, Message):
+                    kb2 = InlineKeyboardMarkup(
+                        row_width=1,
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по дням", callback_data="stat_day"
+                                )
+                            ],
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по годам", callback_data="stat_year"
+                                )
+                            ],
+                        ],
+                    )
+                    await bot.edit_message_text(
+                        await pstat("C"), callback.message.chat.id, load_message.message_id
+                    )
+                    await bot.edit_message_reply_markup(
+                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                    )
         elif callback.data == "stat_year":
-            load_message = await bot.edit_message_text(
-                "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
-            )
-            kb2 = InlineKeyboardMarkup(
-                row_width=1,
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по дням", callback_data="stat_day"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            text="Статистика по месяцам", callback_data="stat_month"
-                        )
-                    ],
-                ],
-            )
-            await bot.edit_message_text(
-                await pstat("D"), callback.message.chat.id, load_message.message_id
-            )
-            await bot.edit_message_reply_markup(
-                callback.message.chat.id, callback.message.message_id, reply_markup=kb2
-            )
+            if callback.message:
+                load_message = await bot.edit_message_text(
+                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                )
+                if isinstance(load_message, Message):
+                    kb2 = InlineKeyboardMarkup(
+                        row_width=1,
+                        inline_keyboard=[
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по дням", callback_data="stat_day"
+                                )
+                            ],
+                            [
+                                InlineKeyboardButton(
+                                    text="Статистика по месяцам", callback_data="stat_month"
+                                )
+                            ],
+                        ],
+                    )
+                    await bot.edit_message_text(
+                        await pstat("D"), callback.message.chat.id, load_message.message_id
+                    )
+                    await bot.edit_message_reply_markup(
+                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                    )
     except Exception as e:
         logger.exception("Ошибка в main/check_callback", e)
         await bot.send_message(loggs_acc, f"Ошибка в main/check_callback: {e}")
 
 
 @dp.message(Command(commands="help"))
-async def help(message):
+async def help(message, state: FSMContext):
+    await state.clear()
     if message.chat.id == admin_id:
         await bot.send_message(
             message.chat.id,
@@ -368,7 +377,8 @@ async def start(message):
 
 
 @dp.message(Command(commands="pidorstat"))
-async def stat(message):
+async def stat(message, state: FSMContext):
+    await state.clear()
     try:
         b = await bot.send_message(message.chat.id, "Загрузка..⏳")
         kb2 = InlineKeyboardMarkup(
@@ -395,7 +405,8 @@ async def stat(message):
 
 
 @dp.message(Command(commands="test"))
-async def test(message):
+async def test(message, state: FSMContext):
+    await state.clear()
     await bot.send_message(
         message.chat.id,
         """Протестируй себя петушок...А моя работа давно проверена и отлажена.

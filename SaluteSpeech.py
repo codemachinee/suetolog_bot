@@ -13,7 +13,7 @@ from paswords import (
     scope_salute,
 )
 
-saved_message_salute = []
+saved_message_salute: list[dict[str, str]] = []
 # Отключаем предупреждения
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

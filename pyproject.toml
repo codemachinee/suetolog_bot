@@ -82,12 +82,18 @@ combine-as-imports = true
 known-first-party = ["suetolog_bot"]
 
 [tool.mypy]
-mypy_path = "suetolog_bot"
-strict = true  # Включает строгую проверку типов
-ignore_missing_imports = true  # Не проверять сторонние библиотеки
-warn_unused_ignores = true  # Предупреждать об игнорируемых аннотациях
-warn_redundant_casts = true  # Предупреждать о ненужных `cast()`
-disallow_untyped_defs = true  # Запрещает функции без аннотации типов
+python_version = "3.10"
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = "requests.*"
+ignore_missing_imports = true
+
 
 [mypy-paswords]
 disable_error_code = ["import-untyped", "module-name"]

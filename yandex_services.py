@@ -8,7 +8,7 @@ from loguru import logger
 
 import paswords
 
-saved_messages_davinci = []
+saved_messages_davinci: list[dict[str, str]] = []
 y = yadisk.YaDisk(token=paswords.yadisk_token)
 
 
@@ -34,15 +34,16 @@ class Davinci:
             },
             "messages": [],
         }
-        prompt["messages"] = (
+        messages: list[dict[str, str]] = [
             {
                 "role": "system",
                 "text": "Ты Давинчи, бот помощник знающий ответы на все вопросы. Ты даешь краткий и лаконичный "
                 "ответ на любые вопросы, а также способен найти запрашиваемое в интернете. Ты максимально "
                 "вежлив и учтив.",
-            },
-            *saved_messages_davinci,
-        )
+            }
+        ]
+        messages.extend(saved_messages_davinci)
+        prompt["messages"] = messages
         url = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
         headers = {
             "Content-Type": "application/json",
