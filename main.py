@@ -4,8 +4,8 @@ from datetime import datetime
 from random import choice
 
 import aiofiles  # -*- coding: utf-8 -*-
-from aiogram import Bot, Dispatcher, F, types
-from aiogram.filters import Command
+from aiogram import Bot, Dispatcher, F, types, Router
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     CallbackQuery,
@@ -25,13 +25,19 @@ from functions_file import (
     pstat,
     value_plus_one,
 )
-from paswords import admin_id, group_id, loggs_acc, major_suetolog
+from paswords import admin_id, group_id, loggs_acc, major_suetolog, codemashine_test
 from SaluteSpeech import (
     Artur,
     Artur_happy_birthday,
     save_audio,
 )
 from yandex_services import Davinci, YaDisk
+from kinophiles.db import init_db
+from kinophiles import handlers as kinophiles_handlers
+from kinophiles.handlers import _start_kinophiles_private
+
+import logging
+
 
 # token = lemonade
 # token = codemashine_test
@@ -39,13 +45,22 @@ token = major_suetolog
 
 bot = Bot(token=token)
 dp = Dispatcher()
+main_router = Router()
+
+# Подключаем роутеры в правильном порядке
+dp.include_router(kinophiles_handlers.kinophiles_router)
+dp.include_router(main_router)
+
+
+# Включаем DEBUG-логирование для aiogram
+logging.basicConfig(level=logging.DEBUG)
 
 logger.remove()
 # Настраиваем логирование в файл с ограничением количества файлов
 logger.add(
     "loggs.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-    level="INFO",
+    level="DEBUG",  # <--- Меняем уровень на DEBUG
     rotation="5 MB",  # Ротация файла каждые 10 MB
     retention="10 days",  # Хранить только 5 последних логов
     compression="zip",  # Сжимать старые логи в архив
@@ -214,7 +229,7 @@ async def dr():
         await bot.send_message(loggs_acc, f"Ошибка в main/dr: {e}")
 
 
-@dp.callback_query(F.data)
+@main_router.callback_query(F.data.in_({"bof", "stat_day", "stat_month", "stat_year"}))
 async def check_callback(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     try:
@@ -326,7 +341,7 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
         await bot.send_message(loggs_acc, f"Ошибка в main/check_callback: {e}")
 
 
-@dp.message(Command(commands="help"))
+@main_router.message(Command(commands="help"))
 async def help(message, state: FSMContext):
     await state.clear()
     if message.chat.id == admin_id:
@@ -365,18 +380,31 @@ async def help(message, state: FSMContext):
         )
 
 
-@dp.message(Command(commands="start"))
-async def start(message):
-    await bot.send_message(
-        message.chat.id,
-        """Бот уже инициализирован.
-Я работаю по расписанию. Пидр дня назначается ежедневно в 11:00 по московскому времени
+@main_router.message(Command(commands="start"))
+async def start(message: Message, state: FSMContext, command: CommandObject):
+    """
+    Обработчик команды /start.
+    Поддерживает deep link для функции 'Кинофилы'.
+    """
+    # Если команда вызвана с аргументом 'kinophiles' (deep link)
+    if command.args == "kinophiles":
+        # Убедимся, что это личный чат
+        if message.chat.type == 'private':
+            # Запускаем сценарий для кинофилов
+            await _start_kinophiles_private(message, state)
+    else:
+        # Стандартное поведение /start
+        await state.clear()
+        await bot.send_message(
+            message.chat.id,
+            """Бот уже инициализирован.
+Я работаю по расписанию. Пидор дня назначается ежедневно в 11:00 по московскому времени
 
 /help - справка по боту""",
-    )
+        )
 
 
-@dp.message(Command(commands="pidorstat"))
+@main_router.message(Command(commands="pidorstat"))
 async def stat(message, state: FSMContext):
     await state.clear()
     try:
@@ -404,7 +432,7 @@ async def stat(message, state: FSMContext):
         await bot.send_message(loggs_acc, f"Ошибка в main/stat: {e}")
 
 
-@dp.message(Command(commands="test"))
+@main_router.message(Command(commands="test"))
 async def test(message, state: FSMContext):
     await state.clear()
     await bot.send_message(
@@ -415,7 +443,7 @@ async def test(message, state: FSMContext):
     )
 
 
-@dp.message(Command(commands="sent_message"))
+@main_router.message(Command(commands="sent_message"))
 async def sent_message(message, state: FSMContext):
     try:
         if message.chat.id == admin_id:
@@ -431,7 +459,7 @@ async def sent_message(message, state: FSMContext):
         await bot.send_message(loggs_acc, f"Ошибка в main/sent_message: {e}")
 
 
-@dp.message(step_message.message)
+@main_router.message(step_message.message)
 async def perehvat(message, state: FSMContext):
     try:
         await bot.copy_message(group_id, admin_id, message.message_id)
@@ -442,7 +470,7 @@ async def perehvat(message, state: FSMContext):
         await bot.send_message(loggs_acc, f"Ошибка в main/sent_message: {e}")
 
 
-@dp.message(F.text)
+@main_router.message(F.text)
 async def chek_message(message):
     try:
         sosal_list = [
@@ -578,7 +606,7 @@ async def chek_message(message):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message: {e}")
 
 
-@dp.message(F.document, F.chat.type == "private")
+@main_router.message(F.document, F.chat.type == "private")
 async def chek_message_doc(v):
     try:
         await YaDisk(bot, v).save_doc()
@@ -587,7 +615,7 @@ async def chek_message_doc(v):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_doc: {e}")
 
 
-@dp.message(F.photo, F.chat.type == "private")
+@main_router.message(F.photo, F.chat.type == "private")
 async def chek_message_photo(v):
     try:
         await YaDisk(bot, v).save_photo()
@@ -596,7 +624,7 @@ async def chek_message_photo(v):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_photo: {e}")
 
 
-@dp.message(F.video, F.chat.type == "private")
+@main_router.message(F.video, F.chat.type == "private")
 async def chek_message_video(v):
     try:
         await YaDisk(bot, v).save_video()
@@ -605,7 +633,7 @@ async def chek_message_video(v):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_video: {e}")
 
 
-@dp.message(F.video_note, F.chat.type == "private")
+@main_router.message(F.video_note, F.chat.type == "private")
 async def chek_message_video_note(v):
     try:
         await YaDisk(bot, v).save_video_note()
@@ -614,7 +642,7 @@ async def chek_message_video_note(v):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_video_note: {e}")
 
 
-@dp.message(F.voice, F.chat.type == "private")
+@main_router.message(F.voice, F.chat.type == "private")
 async def chek_message_voice(v):
     try:
         await save_audio(bot, v)
@@ -624,6 +652,7 @@ async def chek_message_voice(v):
 
 
 async def main():
+    await init_db()
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         pidr, "cron", day_of_week="mon-sun", hour=8, misfire_grace_time=700
