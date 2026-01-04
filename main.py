@@ -1,13 +1,15 @@
 import asyncio
 import json
+import logging
 from datetime import datetime
 from random import choice
 
 import aiofiles  # -*- coding: utf-8 -*-
-from aiogram import Bot, Dispatcher, F, types, Router
+from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
+    BotCommand,
     CallbackQuery,
     FSInputFile,
     InlineKeyboardButton,
@@ -25,23 +27,20 @@ from functions_file import (
     pstat,
     value_plus_one,
 )
-from paswords import admin_id, group_id, loggs_acc, major_suetolog, codemashine_test
+from kinophiles import handlers as kinophiles_handlers
+from kinophiles.db import init_db
+from kinophiles.handlers import _start_kinophiles_private
+from paswords import admin_id, codemashine_test, group_id, loggs_acc
 from SaluteSpeech import (
     Artur,
     Artur_happy_birthday,
     save_audio,
 )
 from yandex_services import Davinci, YaDisk
-from kinophiles.db import init_db
-from kinophiles import handlers as kinophiles_handlers
-from kinophiles.handlers import _start_kinophiles_private
-
-import logging
-
 
 # token = lemonade
-# token = codemashine_test
-token = major_suetolog
+token = codemashine_test
+# token = major_suetolog
 
 bot = Bot(token=token)
 dp = Dispatcher()
@@ -53,15 +52,15 @@ dp.include_router(main_router)
 
 
 # Включаем DEBUG-логирование для aiogram
-# logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.INFO)
 
 logger.remove()
 # Настраиваем логирование в файл с ограничением количества файлов
 logger.add(
     "loggs.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-    level="INFO",  # <--- Меняем уровень на DEBUG
+    level="DEBUG",  # <--- Меняем уровень на DEBUG
     rotation="5 MB",  # Ротация файла каждые 10 MB
     retention="10 days",  # Хранить только 5 последних логов
     compression="zip",  # Сжимать старые логи в архив
@@ -255,11 +254,15 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
                         [types.KeyboardButton(text="Шар съебись")],
                     ],
                 )
-                await bot.send_message(callback.message.chat.id, "...", reply_markup=kb1)
+                await bot.send_message(
+                    callback.message.chat.id, "...", reply_markup=kb1
+                )
         elif callback.data == "stat_day":
             if callback.message:
                 load_message = await bot.edit_message_text(
-                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                    "Загрузка..⏳",
+                    callback.message.chat.id,
+                    callback.message.message_id,
                 )
                 if isinstance(load_message, Message):
                     kb2 = types.InlineKeyboardMarkup(
@@ -267,26 +270,34 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
                         inline_keyboard=[
                             [
                                 InlineKeyboardButton(
-                                    text="Статистика по месяцам", callback_data="stat_month"
+                                    text="Статистика по месяцам",
+                                    callback_data="stat_month",
                                 )
                             ],
                             [
                                 InlineKeyboardButton(
-                                    text="Статистика по годам", callback_data="stat_year"
+                                    text="Статистика по годам",
+                                    callback_data="stat_year",
                                 )
                             ],
                         ],
                     )
                     await bot.edit_message_text(
-                        await pstat("A"), callback.message.chat.id, load_message.message_id
+                        await pstat("A"),
+                        callback.message.chat.id,
+                        load_message.message_id,
                     )
                     await bot.edit_message_reply_markup(
-                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                        callback.message.chat.id,
+                        callback.message.message_id,
+                        reply_markup=kb2,
                     )
         elif callback.data == "stat_month":
             if callback.message:
                 load_message = await bot.edit_message_text(
-                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                    "Загрузка..⏳",
+                    callback.message.chat.id,
+                    callback.message.message_id,
                 )
                 if isinstance(load_message, Message):
                     kb2 = InlineKeyboardMarkup(
@@ -299,21 +310,28 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
                             ],
                             [
                                 InlineKeyboardButton(
-                                    text="Статистика по годам", callback_data="stat_year"
+                                    text="Статистика по годам",
+                                    callback_data="stat_year",
                                 )
                             ],
                         ],
                     )
                     await bot.edit_message_text(
-                        await pstat("C"), callback.message.chat.id, load_message.message_id
+                        await pstat("C"),
+                        callback.message.chat.id,
+                        load_message.message_id,
                     )
                     await bot.edit_message_reply_markup(
-                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                        callback.message.chat.id,
+                        callback.message.message_id,
+                        reply_markup=kb2,
                     )
         elif callback.data == "stat_year":
             if callback.message:
                 load_message = await bot.edit_message_text(
-                    "Загрузка..⏳", callback.message.chat.id, callback.message.message_id
+                    "Загрузка..⏳",
+                    callback.message.chat.id,
+                    callback.message.message_id,
                 )
                 if isinstance(load_message, Message):
                     kb2 = InlineKeyboardMarkup(
@@ -326,16 +344,21 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
                             ],
                             [
                                 InlineKeyboardButton(
-                                    text="Статистика по месяцам", callback_data="stat_month"
+                                    text="Статистика по месяцам",
+                                    callback_data="stat_month",
                                 )
                             ],
                         ],
                     )
                     await bot.edit_message_text(
-                        await pstat("D"), callback.message.chat.id, load_message.message_id
+                        await pstat("D"),
+                        callback.message.chat.id,
+                        load_message.message_id,
                     )
                     await bot.edit_message_reply_markup(
-                        callback.message.chat.id, callback.message.message_id, reply_markup=kb2
+                        callback.message.chat.id,
+                        callback.message.message_id,
+                        reply_markup=kb2,
                     )
     except Exception as e:
         logger.exception("Ошибка в main/check_callback", e)
@@ -350,12 +373,12 @@ async def help(message, state: FSMContext):
             message.chat.id,
             (
                 "Основные команды поддерживаемые ботом:\n"
-                "/orel - вызвать орловского помощника,\n"
                 "/pidorstat - пидорский рейтинг,\n"
                 "/start - инициализация бота,\n"
                 "/help - справка по боту,\n"
                 "/test - тестирование бота.\n"
-                "/sent_message - отправка сообщения в группу.\n\n"
+                "/sent_message - отправка сообщения в группу.\n"
+                "/kinophiles - списки фильмов и сериалов пользователей\n\n"
                 "Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n"
                 "Для перевода воиса(длительность до 1 мин.) в текст ответьте на него "
                 'словом "давинчи" или перешлите в личку боту.\n\n'
@@ -371,7 +394,8 @@ async def help(message, state: FSMContext):
                 "/pidorstat - пидорский рейтинг,\n"
                 "/start - инициализация бота,\n"
                 "/help - справка по боту,\n"
-                "/test - тестирование бота.\n\n"
+                "/test - тестирование бота.\n"
+                "/kinophiles - списки фильмов и сериалов пользователей\n\n"
                 "Для вызова Давинчи или Артура необходимо указать имя в сообщении.\n\n"
                 "Для перевода воиса(длительность до 1 мин.) в текст ответьте на него "
                 'словом "давинчи" или перешлите в личку боту.\n\n'
@@ -390,7 +414,7 @@ async def start(message: Message, state: FSMContext, command: CommandObject):
     # Если команда вызвана с аргументом 'kinophiles' (deep link)
     if command.args == "kinophiles":
         # Убедимся, что это личный чат
-        if message.chat.type == 'private':
+        if message.chat.type == "private":
             # Запускаем сценарий для кинофилов
             await _start_kinophiles_private(message, state)
     else:
@@ -464,7 +488,7 @@ async def sent_message(message, state: FSMContext):
 async def perehvat(message, state: FSMContext):
     try:
         await bot.copy_message(group_id, admin_id, message.message_id)
-        await Message.answer(message, text="сообщение отправлено", show_allert=True)
+        await Message.answer(message, text="сообщение отправлено", show_alert=True)
         await state.clear()
     except Exception as e:
         logger.exception("Ошибка в main/sent_message", e)
@@ -652,7 +676,25 @@ async def chek_message_voice(v):
         await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_voice: {e}")
 
 
+# --- Асинхронная функция для установки команд бота в меню Telegram ---
+async def set_commands():
+    """
+    Устанавливает список команд, которые будут отображаться в меню бота Telegram.
+    """
+    commands = [
+        BotCommand(command="start", description="запуск/перезапуск бота"),
+        BotCommand(command="test", description="тестирование бота"),
+        BotCommand(command="help", description="справка по боту"),
+        BotCommand(command="pidorstat", description="рейтинг пидорасов"),
+        BotCommand(
+            command="kinophiles", description="списки фильмов и сериалов пользователей"
+        ),
+    ]
+    await bot.set_my_commands(commands)
+
+
 async def main():
+    await set_commands()
     await init_db()
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
