@@ -466,12 +466,12 @@ async def process_entering_value(message: Message, state: FSMContext):
         list_id=list_id
     )
 
-@kinophiles_router.callback_query()
-async def catch_all_callbacks(callback: CallbackQuery):
-    print("Caught callback query:", callback.data)
-    try:
-        data = KinophilesCallback.unpack(callback.data)
-        print("Unpacked data:", data)
-    except Exception as e:
-        print("Could not unpack data:", e)
-    await callback.answer("This callback was not handled by any specific handler.")
+# @kinophiles_router.callback_query()
+# async def catch_all_callbacks(callback: CallbackQuery):
+#     print("Caught callback query:", callback.data)
+#     try:
+#         data = KinophilesCallback.unpack(callback.data)
+#         print("Unpacked data:", data)
+#     except Exception as e:
+#         print("Could not unpack data:", e)
+#     await callback.answer("This callback was not handled by any specific handler.")
