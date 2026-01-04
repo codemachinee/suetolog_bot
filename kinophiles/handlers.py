@@ -1,5 +1,5 @@
 from aiogram import Bot, F, Router
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -17,7 +17,7 @@ from .keyboards import (
     get_view_category_keyboard,
     get_view_items_keyboard,
 )
-from .states import AddItem, CreateList, EditItem, KinophilesMenu
+from .states import AddItem, CreateList, EditItem, KinophilesMenu, RenameList
 
 kinophiles_router = Router()
 
@@ -59,8 +59,9 @@ async def cmd_kinophiles(message: Message, state: FSMContext, bot: Bot):
 @kinophiles_router.callback_query(
     KinophilesCallback.filter(F.action == "main_menu"), F.message.chat.type == "private"
 )
-async def cq_main_menu(callback: CallbackQuery, state: FSMContext):
+async def cq_main_menu(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """Обработчик для возврата в главное меню (только в лс)."""
+    await bot.answer_callback_query(callback.id)
     await state.clear()
     await callback.message.edit_text(
         TEXT_MAIN_MENU, reply_markup=get_main_menu_keyboard(), parse_mode="HTML"
@@ -70,8 +71,12 @@ async def cq_main_menu(callback: CallbackQuery, state: FSMContext):
 @kinophiles_router.callback_query(
     KinophilesCallback.filter(F.action == "my_list"), F.message.chat.type == "private"
 )
-async def cq_my_list(callback: CallbackQuery, state: FSMContext):
+async def cq_my_list(callback: CallbackQuery, bot: Bot, state: FSMContext):
     """Обработчик для меню 'Мой список' (только в лс)."""
+    await bot.answer_callback_query(callback.id)
+    await (
+        state.clear()
+    )  # Сбрасываем состояние на случай, если пользователь вышел из другого сценария
     user_list = await db.get_user_list_by_id(callback.from_user.id)
 
     text = ""
@@ -92,8 +97,9 @@ async def cq_my_list(callback: CallbackQuery, state: FSMContext):
     KinophilesCallback.filter(F.action == "create_list"),
     F.message.chat.type == "private",
 )
-async def cq_create_list(callback: CallbackQuery, state: FSMContext):
+async def cq_create_list(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """Начало процесса создания списка (только в лс)."""
+    await bot.answer_callback_query(callback.id)
     await state.set_state(CreateList.entering_name)
     await callback.message.edit_text(
         "Отлично! Придумайте название для вашего списка (например, 'Цыганские бестселлеры')."
@@ -133,9 +139,49 @@ async def process_create_list_name(message: Message, state: FSMContext):
     )
 
 
+@kinophiles_router.callback_query(
+    KinophilesCallback.filter(F.action == "rename_list"),
+    F.message.chat.type == "private",
+)
+async def cq_rename_list_start(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """Начало процесса переименования списка."""
+    await bot.answer_callback_query(callback.id)
+    await state.set_state(RenameList.entering_new_name)
+    await callback.message.edit_text("Введите новое название для вашего списка:")
+
+
+@kinophiles_router.message(RenameList.entering_new_name, F.chat.type == "private")
+async def process_rename_list_name(message: Message, state: FSMContext):
+    """Обработка нового имени и переименование списка."""
+    new_name = message.text.strip()
+    user_id = message.from_user.id
+
+    if await db.get_list_by_name(new_name):
+        await message.answer(
+            "Список с таким названием уже существует. Пожалуйста, введите другое."
+        )
+        return
+
+    await db.update_list_name(user_id, new_name)
+    await state.clear()
+
+    await message.answer(
+        f"Название вашего списка изменено на '<b>{new_name}</b>'!", parse_mode="HTML"
+    )
+
+    # Показываем обновленное меню "Мой список"
+    user_list = await db.get_user_list_by_id(user_id)
+    await message.answer(
+        f"Ваш список: <b>{user_list[1]}</b>\n\nВыберите действие:",
+        reply_markup=get_my_list_menu_keyboard(has_list=True),
+        parse_mode="HTML",
+    )
+
+
 @kinophiles_router.callback_query(KinophilesCallback.filter(F.action == "other_lists"))
-async def cq_other_lists(callback: CallbackQuery, state: FSMContext):
+async def cq_other_lists(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """Показывает списки других пользователей."""
+    # await bot.answer_callback_query(callback.id)
     all_lists = await db.get_all_lists()
     other_lists = [lst for lst in all_lists if lst[2] != callback.from_user.id]
 
@@ -153,9 +199,13 @@ async def cq_other_lists(callback: CallbackQuery, state: FSMContext):
 
 @kinophiles_router.callback_query(KinophilesCallback.filter(F.action == "view_list"))
 async def cq_view_list(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Показывает категории для выбранного списка."""
+    await bot.answer_callback_query(callback.id)
     list_id = callback_data.list_id
     await callback.message.edit_text(
         "Выберите категорию для просмотра:",
@@ -167,9 +217,13 @@ async def cq_view_list(
     KinophilesCallback.filter(F.action == "view_category")
 )
 async def cq_view_category(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Показывает элементы в выбранной категории с пагинацией."""
+    await bot.answer_callback_query(callback.id)
     list_id = callback_data.list_id
     category = callback_data.category
     page = callback_data.page
@@ -188,7 +242,7 @@ async def cq_view_category(
 
     text = f"<b>{category.capitalize()}</b> (страница {page}/{total_pages})\n\n"
     for item in items:
-        text += f"▪️ <b>{item['title']}</b>\n"
+        text += f"🎬 <b>{item['title']}</b>\n"
         if item.get("link"):
             text += f"   <a href='{item['link']}'>Ссылка</a>\n"
         if item.get("note"):
@@ -207,8 +261,9 @@ async def cq_view_category(
     KinophilesCallback.filter(F.action == "edit_list_menu"),
     F.message.chat.type == "private",
 )
-async def cq_edit_list_menu(callback: CallbackQuery, state: FSMContext):
+async def cq_edit_list_menu(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """Показывает меню выбора категории для редактирования."""
+    await bot.answer_callback_query(callback.id)
     await state.set_state(KinophilesMenu.editing_items)
     await state.update_data(selected_ids=[])
     await callback.message.edit_text(
@@ -251,18 +306,26 @@ async def _draw_edit_items_page(
     KinophilesCallback.filter(
         F.action.in_({"edit_items_list", "select_item", "cancel_selection"})
     ),
-    KinophilesMenu.editing_items,
+    StateFilter(KinophilesMenu.editing_items, EditItem.choosing_field),
     F.message.chat.type == "private",
 )
 async def cq_edit_items_list(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Показывает список элементов для редактирования, обрабатывает выбор и отмену."""
+    await bot.answer_callback_query(callback.id)
     user_list = await db.get_user_list_by_id(callback.from_user.id)
     if not user_list:
         await callback.answer("У вас еще нет списка.", show_alert=True)
         return
     list_id, _ = user_list
+
+    # Если мы вернулись из меню редактирования поля, сбрасываем состояние
+    if await state.get_state() == EditItem.choosing_field.state:
+        await state.set_state(KinophilesMenu.editing_items)
 
     if callback_data.action == "select_item":
         current_data = await state.get_data()
@@ -295,9 +358,13 @@ async def cq_edit_items_list(
     F.message.chat.type == "private",
 )
 async def cq_delete_selected(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Удаляет выбранные элементы."""
+    await bot.answer_callback_query(callback.id)
     user_list = await db.get_user_list_by_id(callback.from_user.id)
     if not user_list:
         await callback.answer("У вас еще нет списка.", show_alert=True)
@@ -330,9 +397,13 @@ async def cq_delete_selected(
     F.message.chat.type == "private",
 )
 async def cq_delete_all_confirm(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Спрашивает подтверждение на удаление всех элементов."""
+    await bot.answer_callback_query(callback.id)
     category = callback_data.category
     await callback.message.edit_text(
         f"Вы уверены, что хотите удалить все '{category}' из вашего списка? Это действие необратимо.",
@@ -345,9 +416,13 @@ async def cq_delete_all_confirm(
     F.message.chat.type == "private",
 )
 async def cq_delete_all(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Удаляет все элементы в категории."""
+    await bot.answer_callback_query(callback.id)
     category = callback_data.category
     user_list = await db.get_user_list_by_id(callback.from_user.id)
     list_id = user_list[0]
@@ -373,9 +448,13 @@ async def cq_delete_all(
     KinophilesCallback.filter(F.action == "add_item"), F.message.chat.type == "private"
 )
 async def cq_add_item_start(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Начало FSM для добавления нового элемента."""
+    await bot.answer_callback_query(callback.id)
     category = callback_data.category
     await state.update_data(category=category)
     await state.set_state(AddItem.entering_title)
@@ -454,9 +533,13 @@ async def process_add_item_note(message: Message, state: FSMContext):
     F.message.chat.type == "private",
 )
 async def cq_edit_item_start(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Начало FSM для редактирования элемента."""
+    await bot.answer_callback_query(callback.id)
     item_id = callback_data.item_id
     category = callback_data.category
     page = callback_data.page
@@ -469,7 +552,12 @@ async def cq_edit_item_start(
     await state.update_data(item_id=item_id, original_category=category, page=page)
     await state.set_state(EditItem.choosing_field)
 
-    text = f"Вы редактируете: <b>{item['title']}</b>\n\nВыберите поле для изменения:"
+    text = (
+        f"Название: <b>{item['title']}</b>\n"
+        f"Ссылка: <b>{item['link']}</b>\n"
+        f"Примечание: <b>{item['note']}</b>"
+        f"\n\nВыберите поле для изменения:"
+    )
     await callback.message.edit_text(
         text,
         reply_markup=get_edit_field_keyboard(item_id, category, page),
@@ -483,9 +571,13 @@ async def cq_edit_item_start(
     F.message.chat.type == "private",
 )
 async def cq_choose_field(
-    callback: CallbackQuery, callback_data: KinophilesCallback, state: FSMContext
+    callback: CallbackQuery,
+    callback_data: KinophilesCallback,
+    state: FSMContext,
+    bot: Bot,
 ):
     """Обработка выбора поля для редактирования."""
+    await bot.answer_callback_query(callback.id)
     field = callback_data.field
     await state.update_data(field_to_edit=field)
     await state.set_state(EditItem.entering_value)
@@ -518,9 +610,16 @@ async def process_entering_value(message: Message, state: FSMContext):
         link=item["link"],
         note=item["note"],
     )
-
+    if field == "title":
+        mess_name_field = "название"
+    elif field == "link":
+        mess_name_field = "ссылка"
+    elif field == "note":
+        mess_name_field = "примечание"
+    else:
+        mess_name_field = field
     await message.answer(
-        f"✅ Поле '{field}' успешно обновлено для элемента '{item['title']}'!"
+        f"✅ Поле {mess_name_field} успешно обновлено для элемента '{item['title']}'!"
     )
 
     await state.clear()

@@ -7,6 +7,12 @@ class CreateList(StatesGroup):
     entering_name = State()
 
 
+class RenameList(StatesGroup):
+    """Состояния для процесса переименования списка."""
+
+    entering_new_name = State()
+
+
 class AddItem(StatesGroup):
     """Состояния для процесса добавления нового элемента (фильма/сериала)."""
 

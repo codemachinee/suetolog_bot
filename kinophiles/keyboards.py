@@ -53,12 +53,22 @@ def get_my_list_menu_keyboard(has_list: bool) -> InlineKeyboardMarkup:
     """Возвращает клавиатуру для меню 'Мой список'."""
     buttons = []
     if has_list:
-        buttons.append(
+        buttons.extend(
             [
-                InlineKeyboardButton(
-                    text="✏️ Изменить список",
-                    callback_data=KinophilesCallback(action="edit_list_menu").pack(),
-                )
+                [
+                    InlineKeyboardButton(
+                        text="✏️ Изменить список",
+                        callback_data=KinophilesCallback(
+                            action="edit_list_menu"
+                        ).pack(),
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text="✍️ Сменить название",
+                        callback_data=KinophilesCallback(action="rename_list").pack(),
+                    )
+                ],
             ]
         )
     else:

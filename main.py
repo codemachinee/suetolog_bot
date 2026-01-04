@@ -30,7 +30,7 @@ from functions_file import (
 from kinophiles import handlers as kinophiles_handlers
 from kinophiles.db import init_db
 from kinophiles.handlers import _start_kinophiles_private
-from paswords import admin_id, codemashine_test, group_id, loggs_acc, major_suetolog
+from paswords import admin_id, group_id, loggs_acc, major_suetolog
 from SaluteSpeech import (
     Artur,
     Artur_happy_birthday,

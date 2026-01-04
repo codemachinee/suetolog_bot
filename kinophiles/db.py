@@ -72,6 +72,15 @@ async def get_list_by_name(list_name: str) -> Optional[Tuple]:
         return await cursor.fetchone()
 
 
+async def update_list_name(user_id: int, new_name: str) -> None:
+    """Обновляет имя списка для пользователя."""
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute(
+            "UPDATE user_lists SET list_name = ? WHERE user_id = ?", (new_name, user_id)
+        )
+        await db.commit()
+
+
 # --- Функции для элементов (фильмов/сериалов) ---
 
 
