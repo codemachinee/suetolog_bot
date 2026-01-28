@@ -14,8 +14,9 @@ async def init_db() -> None:
         await db.execute("""
             CREATE TABLE IF NOT EXISTS user_lists (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER UNIQUE NOT NULL,
-                list_name TEXT NOT NULL
+                user_id INTEGER NOT NULL,
+                list_name TEXT NOT NULL,
+                UNIQUE(user_id, list_name)
             )
         """)
         await db.execute("""
@@ -45,15 +46,13 @@ async def create_user_list(user_id: int, list_name: str) -> None:
         await db.commit()
 
 
-async def get_user_list_by_id(user_id: int) -> Optional[Tuple[int, str]]:
-    """Возвращает список пользователя (id, list_name) по его user_id."""
+async def get_user_lists(user_id: int) -> List[Tuple[int, str]]:
+    """Возвращает все списки пользователя (id, list_name)."""
     async with aiosqlite.connect(DB_NAME) as db:
-        db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             "SELECT id, list_name FROM user_lists WHERE user_id = ?", (user_id,)
         )
-        row = await cursor.fetchone()
-        return (row["id"], row["list_name"]) if row else None
+        return await cursor.fetchall()
 
 
 async def get_all_lists() -> List[Tuple[int, str, int]]:
@@ -64,7 +63,7 @@ async def get_all_lists() -> List[Tuple[int, str, int]]:
 
 
 async def get_list_by_name(list_name: str) -> Optional[Tuple]:
-    """Проверяет существование списка по его имени."""
+    """Проверяет существование списка по его имени во всей БД."""
     async with aiosqlite.connect(DB_NAME) as db:
         cursor = await db.execute(
             "SELECT id FROM user_lists WHERE list_name = ?", (list_name,)
@@ -72,12 +71,19 @@ async def get_list_by_name(list_name: str) -> Optional[Tuple]:
         return await cursor.fetchone()
 
 
-async def update_list_name(user_id: int, new_name: str) -> None:
-    """Обновляет имя списка для пользователя."""
+async def update_list_name(list_id: int, new_name: str) -> None:
+    """Обновляет имя списка."""
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute(
-            "UPDATE user_lists SET list_name = ? WHERE user_id = ?", (new_name, user_id)
+            "UPDATE user_lists SET list_name = ? WHERE id = ?", (new_name, list_id)
         )
+        await db.commit()
+
+
+async def delete_list(list_id: int) -> None:
+    """Удаляет список и все связанные с ним элементы (благодаря ON DELETE CASCADE)."""
+    async with aiosqlite.connect(DB_NAME) as db:
+        await db.execute("DELETE FROM user_lists WHERE id = ?", (list_id,))
         await db.commit()
 
 

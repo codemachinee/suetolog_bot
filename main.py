@@ -30,7 +30,7 @@ from functions_file import (
 from kinophiles import handlers as kinophiles_handlers
 from kinophiles.db import init_db
 from kinophiles.handlers import _start_kinophiles_private
-from paswords import admin_id, group_id, loggs_acc, major_suetolog
+from paswords import admin_id, group_id, loggs_acc, major_suetolog, codemashine_test
 from SaluteSpeech import (
     Artur,
     Artur_happy_birthday,
@@ -53,15 +53,15 @@ dp.include_router(main_router)
 
 # Включаем DEBUG-логирование для aiogram
 # logging.basicConfig(level=logging.DEBUG)
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)  # Отключено для вывода только в файл
 
 logger.remove()
 # Настраиваем логирование в файл с ограничением количества файлов
 logger.add(
     "loggs.log",
     format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-    # level="DEBUG",  # <--- Меняем уровень на DEBUG
-    level="INFO",  # <--- Меняем уровень на INFO
+    level="DEBUG",  # <--- Уровень изменен на DEBUG
+    # level="INFO",  # <--- Меняем уровень на INFO
     rotation="5 MB",  # Ротация файла каждые 10 MB
     retention="10 days",  # Хранить только 5 последних логов
     compression="zip",  # Сжимать старые логи в архив

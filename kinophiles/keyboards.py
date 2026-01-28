@@ -35,8 +35,8 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     buttons = [
         [
             InlineKeyboardButton(
-                text="👤 Мой список",
-                callback_data=KinophilesCallback(action="my_list").pack(),
+                text="👤 Мои списки",
+                callback_data=KinophilesCallback(action="my_lists").pack(),
             )
         ],
         [
@@ -49,37 +49,31 @@ def get_main_menu_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_my_list_menu_keyboard(has_list: bool) -> InlineKeyboardMarkup:
-    """Возвращает клавиатуру для меню 'Мой список'."""
+def get_my_lists_menu_keyboard(
+    lists: List[Tuple[int, str]]
+) -> InlineKeyboardMarkup:
+    """Возвращает клавиатуру со списками пользователя и кнопкой создания нового."""
     buttons = []
-    if has_list:
-        buttons.extend(
-            [
-                [
-                    InlineKeyboardButton(
-                        text="✏️ Изменить список",
-                        callback_data=KinophilesCallback(
-                            action="edit_list_menu"
-                        ).pack(),
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        text="✍️ Сменить название",
-                        callback_data=KinophilesCallback(action="rename_list").pack(),
-                    )
-                ],
-            ]
-        )
-    else:
+    for list_id, list_name in lists:
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text="✨ Создать список",
-                    callback_data=KinophilesCallback(action="create_list").pack(),
+                    text=f"📜 {list_name}",
+                    callback_data=KinophilesCallback(
+                        action="my_list_menu", list_id=list_id
+                    ).pack(),
                 )
             ]
         )
+
+    buttons.append(
+        [
+            InlineKeyboardButton(
+                text="✨ Создать новый список",
+                callback_data=KinophilesCallback(action="create_list").pack(),
+            )
+        ]
+    )
     buttons.append(
         [
             InlineKeyboardButton(
@@ -91,27 +85,95 @@ def get_my_list_menu_keyboard(has_list: bool) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_edit_list_category_keyboard() -> InlineKeyboardMarkup:
+def get_list_management_menu_keyboard(list_id: int) -> InlineKeyboardMarkup:
+    """Возвращает клавиатуру для меню управления конкретным списком."""
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text="✏️ Изменить содержимое",
+                callback_data=KinophilesCallback(
+                    action="edit_list_menu", list_id=list_id
+                ).pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="✍️ Сменить название",
+                callback_data=KinophilesCallback(
+                    action="rename_list", list_id=list_id
+                ).pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="🗑️ Удалить список",
+                callback_data=KinophilesCallback(
+                    action="delete_list_confirm", list_id=list_id
+                ).pack(),
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="⬅️ К моим спискам",
+                callback_data=KinophilesCallback(action="my_lists").pack(),
+            )
+        ],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_delete_list_confirmation_keyboard(list_id: int) -> InlineKeyboardMarkup:
+    """Клавиатура для подтверждения удаления списка."""
+    buttons = [
+        [
+            InlineKeyboardButton(
+                text="Да, я хочу удалить этот список",
+                callback_data=KinophilesCallback(
+                    action="delete_list", list_id=list_id
+                ).pack(),
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text="Нет, вернуться в меню",
+                callback_data=KinophilesCallback(
+                    action="my_list_menu", list_id=list_id
+                ).pack(),
+            ),
+        ],
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def get_edit_list_category_keyboard(list_id: int) -> InlineKeyboardMarkup:
     """Клавиатура для выбора категории для редактирования."""
     buttons = [
         [
             InlineKeyboardButton(
                 text="🎬 Фильмы",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category="фильм", page=1
+                    action="edit_items_list",
+                    category="фильм",
+                    page=1,
+                    list_id=list_id,
                 ).pack(),
             ),
             InlineKeyboardButton(
                 text="📺 Сериалы",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category="сериал", page=1
+                    action="edit_items_list",
+                    category="сериал",
+                    page=1,
+                    list_id=list_id,
                 ).pack(),
             ),
         ],
         [
             InlineKeyboardButton(
                 text="⬅️ Назад",
-                callback_data=KinophilesCallback(action="my_list").pack(),
+                callback_data=KinophilesCallback(
+                    action="my_list_menu", list_id=list_id
+                ).pack(),
             )
         ],
     ]
@@ -132,7 +194,9 @@ def get_back_button_keyboard(back_to: str, **kwargs) -> InlineKeyboardMarkup:
     )
 
 
-def get_other_users_keyboard(lists: List[Tuple[int, str, int]]) -> InlineKeyboardMarkup:
+def get_other_users_keyboard(
+    lists: List[Tuple[int, str, int]]
+) -> InlineKeyboardMarkup:
     """Возвращает клавиатуру со списками других пользователей."""
     buttons = []
     for list_id, list_name, user_id in lists:
@@ -184,20 +248,25 @@ def get_view_category_keyboard(list_id: int) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def get_confirmation_keyboard(action: str, category: str) -> InlineKeyboardMarkup:
-    """Возвращает клавиатуру подтверждения."""
+def get_confirmation_keyboard(
+    list_id: int, category: str
+) -> InlineKeyboardMarkup:
+    """Возвращает клавиатуру подтверждения удаления всех элементов категории."""
     buttons = [
         [
             InlineKeyboardButton(
                 text="Да, удалить все",
                 callback_data=KinophilesCallback(
-                    action=action, category=category
+                    action="delete_all_execute", list_id=list_id, category=category
                 ).pack(),
             ),
             InlineKeyboardButton(
                 text="Нет, вернуться",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category=category, page=1
+                    action="edit_items_list",
+                    list_id=list_id,
+                    category=category,
+                    page=1,
                 ).pack(),
             ),
         ]
@@ -253,6 +322,7 @@ def get_view_items_keyboard(
 
 
 def get_edit_items_keyboard(
+    list_id: int,
     items: List[Item],
     category: str,
     page: int,
@@ -279,6 +349,7 @@ def get_edit_items_keyboard(
                 callback_data=KinophilesCallback(
                     action="select_item",
                     item_id=item["id"],
+                    list_id=list_id,
                     category=category,
                     page=page,
                 ).pack(),
@@ -289,10 +360,11 @@ def get_edit_items_keyboard(
         if not is_selected:
             item_buttons.append(
                 InlineKeyboardButton(
-                    text="✏️",  # Edit button
+                    text="✏️",
                     callback_data=KinophilesCallback(
                         action="edit_item_start",
                         item_id=item["id"],
+                        list_id=list_id,
                         category=category,
                         page=page,
                     ).pack(),
@@ -307,13 +379,19 @@ def get_edit_items_keyboard(
                 InlineKeyboardButton(
                     text="🗑️ Удалить выбранное",
                     callback_data=KinophilesCallback(
-                        action="delete_selected", category=category, page=page
+                        action="delete_selected",
+                        list_id=list_id,
+                        category=category,
+                        page=page,
                     ).pack(),
                 ),
                 InlineKeyboardButton(
                     text="❌ Отмена",
                     callback_data=KinophilesCallback(
-                        action="cancel_selection", category=category, page=page
+                        action="cancel_selection",
+                        list_id=list_id,
+                        category=category,
+                        page=page,
                     ).pack(),
                 ),
             ]
@@ -326,7 +404,10 @@ def get_edit_items_keyboard(
             InlineKeyboardButton(
                 text="⬅️ Назад",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category=category, page=page - 1
+                    action="edit_items_list",
+                    list_id=list_id,
+                    category=category,
+                    page=page - 1,
                 ).pack(),
             )
         )
@@ -335,7 +416,10 @@ def get_edit_items_keyboard(
             InlineKeyboardButton(
                 text="Вперед ➡️",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category=category, page=page + 1
+                    action="edit_items_list",
+                    list_id=list_id,
+                    category=category,
+                    page=page + 1,
                 ).pack(),
             )
         )
@@ -348,7 +432,7 @@ def get_edit_items_keyboard(
             InlineKeyboardButton(
                 text=f"➕ Добавить {'фильм' if category == 'фильм' else 'сериал'}",
                 callback_data=KinophilesCallback(
-                    action="add_item", category=category
+                    action="add_item", list_id=list_id, category=category
                 ).pack(),
             )
         ]
@@ -358,7 +442,7 @@ def get_edit_items_keyboard(
             InlineKeyboardButton(
                 text="💥 Удалить все",
                 callback_data=KinophilesCallback(
-                    action="delete_all_confirm", category=category
+                    action="delete_all_confirm", list_id=list_id, category=category
                 ).pack(),
             )
         ]
@@ -367,7 +451,9 @@ def get_edit_items_keyboard(
         [
             InlineKeyboardButton(
                 text="⬅️ К выбору категории",
-                callback_data=KinophilesCallback(action="edit_list_menu").pack(),
+                callback_data=KinophilesCallback(
+                    action="edit_list_menu", list_id=list_id
+                ).pack(),
             )
         ]
     )
@@ -375,7 +461,7 @@ def get_edit_items_keyboard(
 
 
 def get_edit_field_keyboard(
-    item_id: int, category: str, page: int
+    item_id: int, list_id: int, category: str, page: int
 ) -> InlineKeyboardMarkup:
     """Возвращает клавиатуру для выбора поля для редактирования."""
     buttons = [
@@ -383,7 +469,10 @@ def get_edit_field_keyboard(
             InlineKeyboardButton(
                 text="Название",
                 callback_data=KinophilesCallback(
-                    action="choose_field", item_id=item_id, field="title"
+                    action="choose_field",
+                    item_id=item_id,
+                    list_id=list_id,
+                    field="title",
                 ).pack(),
             )
         ],
@@ -391,7 +480,10 @@ def get_edit_field_keyboard(
             InlineKeyboardButton(
                 text="Ссылка",
                 callback_data=KinophilesCallback(
-                    action="choose_field", item_id=item_id, field="link"
+                    action="choose_field",
+                    item_id=item_id,
+                    list_id=list_id,
+                    field="link",
                 ).pack(),
             )
         ],
@@ -399,7 +491,10 @@ def get_edit_field_keyboard(
             InlineKeyboardButton(
                 text="Примечание",
                 callback_data=KinophilesCallback(
-                    action="choose_field", item_id=item_id, field="note"
+                    action="choose_field",
+                    item_id=item_id,
+                    list_id=list_id,
+                    field="note",
                 ).pack(),
             )
         ],
@@ -407,7 +502,10 @@ def get_edit_field_keyboard(
             InlineKeyboardButton(
                 text="⬅️ Отмена",
                 callback_data=KinophilesCallback(
-                    action="edit_items_list", category=category, page=page
+                    action="edit_items_list",
+                    list_id=list_id,
+                    category=category,
+                    page=page,
                 ).pack(),
             )
         ],
