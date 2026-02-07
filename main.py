@@ -39,8 +39,8 @@ from SaluteSpeech import (
 from yandex_services import Davinci, YaDisk
 
 # token = lemonade
-# token = codemashine_test
-token = major_suetolog
+token = codemashine_test
+# token = major_suetolog
 
 bot = Bot(token=token)
 dp = Dispatcher()

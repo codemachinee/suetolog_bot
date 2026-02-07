@@ -94,8 +94,9 @@ jobs:
             # Запускаем контейнер
             docker run --pull=always -d \
             --name suetolog-bot \
+            -e KINOPHILES_DB_PATH=/data/kinophiles.db \
             -v /root/suetolog_bot/paswords.py:/app/paswords.py \
             -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
             -v /root/suetolog_bot/loggs.log:/app/loggs.log \
+            -v /root/suetolog_bot/kinophiles.db:/data/kinophiles.db \
             ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
-

@@ -1,8 +1,20 @@
 from typing import Dict, List, Optional, Tuple
 
+import os
+from pathlib import Path
+
 import aiosqlite
 
-DB_NAME = "kinophiles.db"
+# Default to local file for dev; production should set KINOPHILES_DB_PATH
+DB_NAME = os.getenv("KINOPHILES_DB_PATH", "kinophiles.db")
+
+
+def _ensure_db_dir(db_path: str) -> None:
+    db_dir = Path(db_path).expanduser().resolve().parent
+    db_dir.mkdir(parents=True, exist_ok=True)
+
+# Ensure DB directory exists even if init_db isn't called first.
+_ensure_db_dir(DB_NAME)
 
 # Типизация для элемента списка
 Item = Dict[str, any]

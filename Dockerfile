@@ -4,6 +4,9 @@ FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
+# Директория для внешних данных (БД и т.п.)
+RUN mkdir -p /data
+
 # Копируем зависимости в рабочую директорию
 COPY pyproject.toml uv.lock ./
 

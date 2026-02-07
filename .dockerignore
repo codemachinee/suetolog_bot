@@ -12,3 +12,4 @@ logs/
 .dockerignore
 .env
 GEMINI.md
+kinophiles.db
