@@ -5,12 +5,16 @@ from datetime import datetime
 from random import choice
 
 import aiofiles  # -*- coding: utf-8 -*-
+from aiohttp import ClientError
 from aiogram import Bot, Dispatcher, F, Router, types
+from aiogram.client.session.aiohttp import AiohttpSession
+from aiogram.exceptions import TelegramNetworkError, TelegramServerError
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     BotCommand,
     CallbackQuery,
+    ErrorEvent,
     FSInputFile,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -42,9 +46,19 @@ from yandex_services import Davinci, YaDisk
 # token = codemashine_test
 token = major_suetolog
 
-bot = Bot(token=token)
+BOT_API_TIMEOUT_SECONDS = 90
+POLLING_TIMEOUT_SECONDS = 60
+NETWORK_NOTICE_COOLDOWN_SECONDS = 120
+NETWORK_ISSUE_TEXT = (
+    "Сейчас временные проблемы с сетью до Telegram. "
+    "Запрос может выполняться дольше обычного, попробуйте повторить через 1-2 минуты."
+)
+
+bot_session = AiohttpSession(timeout=BOT_API_TIMEOUT_SECONDS)
+bot = Bot(token=token, session=bot_session)
 dp = Dispatcher()
 main_router = Router()
+_last_network_notice_by_chat: dict[int, datetime] = {}
 
 # Подключаем роутеры в правильном порядке
 dp.include_router(kinophiles_handlers.kinophiles_router)
@@ -69,6 +83,78 @@ logger.add(
     diagnose=True,  # Подробный вывод
 )
 
+
+def _is_temporary_network_issue(exception: Exception) -> bool:
+    if isinstance(
+        exception,
+        (TelegramNetworkError, TelegramServerError, asyncio.TimeoutError, TimeoutError, ClientError),
+    ):
+        return True
+
+    exception_text = str(exception).lower()
+    return any(
+        network_hint in exception_text
+        for network_hint in ("timeout", "timed out", "network", "connection")
+    )
+
+
+async def _safe_send_log_message(text: str) -> None:
+    try:
+        await bot.send_message(loggs_acc, text, request_timeout=BOT_API_TIMEOUT_SECONDS)
+    except Exception as e:
+        logger.warning(f"Не удалось отправить сообщение в лог-чат: {e}")
+
+
+def _extract_chat_id(event: ErrorEvent) -> int | None:
+    update = event.update
+    if update.message:
+        return update.message.chat.id
+    if update.callback_query and update.callback_query.message:
+        return update.callback_query.message.chat.id
+    if update.edited_message:
+        return update.edited_message.chat.id
+    if update.channel_post:
+        return update.channel_post.chat.id
+    return None
+
+
+async def _notify_network_issue_if_needed(chat_id: int) -> None:
+    now = datetime.now()
+    last_notice_at = _last_network_notice_by_chat.get(chat_id)
+    if (
+        last_notice_at
+        and (now - last_notice_at).total_seconds() < NETWORK_NOTICE_COOLDOWN_SECONDS
+    ):
+        return
+
+    _last_network_notice_by_chat[chat_id] = now
+    try:
+        await bot.send_message(
+            chat_id,
+            NETWORK_ISSUE_TEXT,
+            request_timeout=BOT_API_TIMEOUT_SECONDS,
+        )
+    except Exception as notify_error:
+        logger.warning(
+            f"Не удалось уведомить chat_id={chat_id} о сетевой проблеме: {notify_error}"
+        )
+
+
+@dp.error()
+async def handle_network_errors(event: ErrorEvent):
+    exception = event.exception
+    if not isinstance(exception, Exception):
+        return False
+
+    if not _is_temporary_network_issue(exception):
+        return False
+
+    chat_id = _extract_chat_id(event)
+    logger.warning(f"Временная сетевая ошибка при обработке update: {exception}")
+    if chat_id is not None:
+        await _notify_network_issue_if_needed(chat_id)
+
+    return True
 
 async def pidr():
     try:
@@ -204,7 +290,7 @@ async def pidr():
             )
     except Exception as e:
         logger.exception("Ошибка в main/pidr", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/pidr: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 async def dr():
@@ -227,7 +313,7 @@ async def dr():
             pass
     except Exception as e:
         logger.exception("Ошибка в main/dr", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/dr: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.callback_query(F.data.in_({"bof", "stat_day", "stat_month", "stat_year"}))
@@ -363,7 +449,7 @@ async def check_callback(callback: CallbackQuery, state: FSMContext):
                     )
     except Exception as e:
         logger.exception("Ошибка в main/check_callback", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/check_callback: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(Command(commands="help"))
@@ -455,7 +541,7 @@ async def stat(message, state: FSMContext):
         )
     except Exception as e:
         logger.exception("Ошибка в main/stat", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/stat: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(Command(commands="test"))
@@ -482,7 +568,7 @@ async def sent_message(message, state: FSMContext):
             )
     except Exception as e:
         logger.exception("Ошибка в main/sent_message", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/sent_message: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(step_message.message)
@@ -493,7 +579,7 @@ async def perehvat(message, state: FSMContext):
         await state.clear()
     except Exception as e:
         logger.exception("Ошибка в main/sent_message", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/sent_message: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.text)
@@ -629,7 +715,7 @@ async def chek_message(message):
                 await Artur(bot, message, b)
     except Exception as e:
         logger.exception("Ошибка в main/chek_message", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.document, F.chat.type == "private")
@@ -638,7 +724,7 @@ async def chek_message_doc(v):
         await YaDisk(bot, v).save_doc()
     except Exception as e:
         logger.exception("Ошибка в main/chek_message_doc", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_doc: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.photo, F.chat.type == "private")
@@ -647,7 +733,7 @@ async def chek_message_photo(v):
         await YaDisk(bot, v).save_photo()
     except Exception as e:
         logger.exception("Ошибка в main/chek_message_photo", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_photo: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.video, F.chat.type == "private")
@@ -656,7 +742,7 @@ async def chek_message_video(v):
         await YaDisk(bot, v).save_video()
     except Exception as e:
         logger.exception("Ошибка в main/chek_message_video", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_video: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.video_note, F.chat.type == "private")
@@ -665,7 +751,7 @@ async def chek_message_video_note(v):
         await YaDisk(bot, v).save_video_note()
     except Exception as e:
         logger.exception("Ошибка в main/chek_message_video_note", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_video_note: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 @main_router.message(F.voice, F.chat.type == "private")
@@ -674,7 +760,7 @@ async def chek_message_voice(v):
         await save_audio(bot, v)
     except Exception as e:
         logger.exception("Ошибка в main/chek_message_voice", e)
-        await bot.send_message(loggs_acc, f"Ошибка в main/chek_message_voice: {e}")
+        await _safe_send_log_message(f"Ошибка: {e}")
 
 
 # --- Асинхронная функция для установки команд бота в меню Telegram ---
@@ -691,19 +777,27 @@ async def set_commands():
             command="kinophiles", description="списки фильмов и сериалов пользователей"
         ),
     ]
-    await bot.set_my_commands(commands)
+    await bot.set_my_commands(commands, request_timeout=BOT_API_TIMEOUT_SECONDS)
 
 
 async def main():
-    await set_commands()
     await init_db()
+    try:
+        await set_commands()
+    except Exception as e:
+        if _is_temporary_network_issue(e):
+            logger.warning(f"Не удалось установить команды бота из-за сети: {e}")
+            await _safe_send_log_message(f"Проблемы сети при set_commands: {e}")
+        else:
+            raise
+
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         pidr, "cron", day_of_week="mon-sun", hour=8, misfire_grace_time=700
     )
     # scheduler.add_job(pidr, trigger="interval", seconds=15)
     scheduler.start()
-    await dp.start_polling(bot, polling_timeout=20)
+    await dp.start_polling(bot, polling_timeout=POLLING_TIMEOUT_SECONDS)
 
 
 if __name__ == "__main__":
@@ -712,4 +806,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         logger.exception("выключение бота")
-        asyncio.run(bot.send_message(loggs_acc, "выключение бота"))
+        asyncio.run(_safe_send_log_message("выключение бота"))

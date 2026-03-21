@@ -1,6 +1,7 @@
 import sqlite3
 
 from aiogram import Bot, F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -69,9 +70,13 @@ async def cq_main_menu(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """Возврат в главное меню (только в лс)."""
     await bot.answer_callback_query(callback.id)
     await state.clear()
-    await callback.message.edit_text(
-        TEXT_MAIN_MENU, reply_markup=get_main_menu_keyboard(), parse_mode="HTML"
-    )
+    try:
+        await callback.message.edit_text(
+            TEXT_MAIN_MENU, reply_markup=get_main_menu_keyboard(), parse_mode="HTML"
+        )
+    except TelegramBadRequest as e:
+        if "message is not modified" not in str(e):
+            raise
 
 
 # --- Логика для "Мои списки" ---
