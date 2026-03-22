@@ -290,6 +290,8 @@ async def pidr():
             )
     except Exception as e:
         logger.exception("Ошибка в main/pidr", e)
+        if _is_temporary_network_issue(e):
+            await _notify_network_issue_if_needed(group_id)
         await _safe_send_log_message(f"Ошибка: {e}")
 
 
@@ -541,6 +543,14 @@ async def stat(message, state: FSMContext):
         )
     except Exception as e:
         logger.exception("Ошибка в main/stat", e)
+        if _is_temporary_network_issue(e):
+            await _notify_network_issue_if_needed(message.chat.id)
+        else:
+            await bot.send_message(
+                message.chat.id,
+                "Не удалось получить статистику. Попробуй чуть позже.",
+                request_timeout=BOT_API_TIMEOUT_SECONDS,
+            )
         await _safe_send_log_message(f"Ошибка: {e}")
 
 
@@ -807,3 +817,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.exception("выключение бота")
         asyncio.run(_safe_send_log_message("выключение бота"))
+
