@@ -111,3 +111,9 @@
   - пользователи получают понятное уведомление о временных проблемах сети (с антиспам-ограничением по времени).
 - В `main.py` добавлена безопасная отправка служебных логов, чтобы повторные сетевые ошибки при логировании не валили обработчики.
 - В `kinophiles/handlers.py` обработан кейс `TelegramBadRequest: message is not modified`, чтобы не создавать лишние traceback при повторных нажатиях.
+
+## Обновления от 22.03.2026
+
+- Добавлен `docker-compose.yml` для `suetolog-bot` с подключением к внешней Docker-сети `tg-vpn-net`.
+- В compose-конфиг добавлены необходимые монтирования (`paswords.py`, `pidor-of-the-day-af3dd140b860.json`, `loggs.log`, `kinophiles.db`) и переменная `KINOPHILES_DB_PATH=/data/kinophiles.db`.
+- Проверено, что текущий GitHub Actions workflow `.github/workflows/ci.yml` не конфликтует с `docker-compose.yml` (CI продолжает использовать `docker build` и `docker run`).

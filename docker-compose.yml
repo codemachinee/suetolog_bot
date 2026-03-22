@@ -1,0 +1,21 @@
+﻿services:
+  suetolog-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: suetolog-bot:local
+    container_name: suetolog-bot
+    restart: unless-stopped
+    environment:
+      - KINOPHILES_DB_PATH=/data/kinophiles.db
+    volumes:
+      - ./paswords.py:/app/paswords.py:ro
+      - ./pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json:ro
+      - ./loggs.log:/app/loggs.log
+      - ./kinophiles.db:/data/kinophiles.db
+    networks:
+      - tg-vpn-net
+
+networks:
+  tg-vpn-net:
+    external: true
