@@ -116,4 +116,12 @@
 
 - Добавлен `docker-compose.yml` для `suetolog-bot` с подключением к внешней Docker-сети `tg-vpn-net`.
 - В compose-конфиг добавлены необходимые монтирования (`paswords.py`, `pidor-of-the-day-af3dd140b860.json`, `loggs.log`, `kinophiles.db`) и переменная `KINOPHILES_DB_PATH=/data/kinophiles.db`.
-- Проверено, что текущий GitHub Actions workflow `.github/workflows/ci.yml` не конфликтует с `docker-compose.yml` (CI продолжает использовать `docker build` и `docker run`).
+- Проверено, что `docker-compose.yml` корректно валидируется и готов к деплою в сеть `tg-vpn-net`.
+## Обновления от 22.03.2026 (CI/CD)
+
+- Обновлен workflow `.github/workflows/ci.yml`: деплой на VPS переведен на `docker compose`.
+- В deploy-скрипт добавлены:
+  - автоподтягивание актуального `main` на сервере (`git fetch` + `git reset --hard origin/main`),
+  - проверка/создание Docker-сети `tg-vpn-net` (`172.30.10.0/24`),
+  - запуск `suetolog-bot` через `docker compose up -d --build --remove-orphans`.
+- Добавлена постпроверка деплоя в CI: вывод `docker ps` и сетей контейнера `suetolog-bot`.

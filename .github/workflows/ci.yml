@@ -6,10 +6,10 @@ on:
       - main
 
 permissions:
-  contents: read         # Разрешения на доступ к коду репозитория
-  packages: write        # Разрешения на загрузку пакетов
-  id-token: write        # Разрешения для работы с токенами
-  actions: read          # Разрешения для работы с действиями
+  contents: read
+  packages: write
+  id-token: write
+  actions: read
 
 jobs:
   test:
@@ -24,7 +24,7 @@ jobs:
         with:
           python-version-file: ".python-version"
 
-      - name: установка uv
+      - name: Установка uv
         uses: astral-sh/setup-uv@v5
 
       - name: Установка зависимостей
@@ -43,8 +43,7 @@ jobs:
           EOF
 
       - name: Запуск тестов
-        run: |
-          uv run pytest -v
+        run: uv run pytest -v
 
   build_and_push_in_GHCR:
     runs-on: ubuntu-latest
@@ -62,41 +61,51 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Сборка Docker образа
-        run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest .
+        run: docker build -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest .
 
       - name: Push Docker образ в GHCR
-        run: |
-          docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+        run: docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
 
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push_in_GHCR
 
     steps:
-      - name: Checkout репозиторий
-        uses: actions/checkout@v4
-
-      - name: Вход на сервер по SSH и деплой
+      - name: Вход на сервер по SSH и деплой через docker compose
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
-            # Входим в GHCR
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            set -euo pipefail
 
-            # Останавливаем и удаляем старый контейнер, если он есть
+            REPO_DIR="/root/suetolog_bot"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              rm -rf "$REPO_DIR"
+              git clone "$REPO_URL" "$REPO_DIR"
+            fi
+
+            cd "$REPO_DIR"
+            git fetch origin main
+            git reset --hard origin/main
+
+            if docker compose version >/dev/null 2>&1; then
+              COMPOSE_CMD="docker compose"
+            elif command -v docker-compose >/dev/null 2>&1; then
+              COMPOSE_CMD="docker-compose"
+            else
+              echo "Docker Compose не найден на сервере"
+              exit 1
+            fi
+
+            docker network inspect tg-vpn-net >/dev/null 2>&1 || \
+              docker network create --driver bridge --subnet 172.30.10.0/24 tg-vpn-net
+
             docker rm -f suetolog-bot || true
-            # Полная очистка кэша, образов и ненужных данных
-            docker system prune -af --volumes
-            # Запускаем контейнер
-            docker run --pull=always -d \
-            --name suetolog-bot \
-            -e KINOPHILES_DB_PATH=/data/kinophiles.db \
-            -v /root/suetolog_bot/paswords.py:/app/paswords.py \
-            -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
-            -v /root/suetolog_bot/loggs.log:/app/loggs.log \
-            -v /root/suetolog_bot/kinophiles.db:/data/kinophiles.db \
-            ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+            $COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans
+
+            docker ps --filter name=suetolog-bot
+            docker inspect suetolog-bot --format '{{json .NetworkSettings.Networks}}'
