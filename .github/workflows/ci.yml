@@ -104,6 +104,8 @@ jobs:
             docker network inspect tg-vpn-net >/dev/null 2>&1 || \
               docker network create --driver bridge --subnet 172.30.10.0/24 tg-vpn-net
 
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
             docker rm -f suetolog-bot || true
             $COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans
 

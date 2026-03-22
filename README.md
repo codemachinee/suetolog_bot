@@ -125,3 +125,4 @@
   - проверка/создание Docker-сети `tg-vpn-net` (`172.30.10.0/24`),
   - запуск `suetolog-bot` через `docker compose up -d --build --remove-orphans`.
 - Добавлена постпроверка деплоя в CI: вывод `docker ps` и сетей контейнера `suetolog-bot`.
+- Добавлена авторизация в `ghcr.io` в deploy-шаге (`docker login`), чтобы устранить ошибку `failed to fetch oauth token: denied` при `docker compose build` на сервере.
