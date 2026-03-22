@@ -141,3 +141,8 @@
 
 - Тест `tests/test_functions_file.py::test_value_plus_one` переведен с внешнего интеграционного сценария на unit-тест с моками (`gspread`), чтобы CI не зависел от доступности Google API.
 - В `pyproject.toml` добавлен `asyncio_default_fixture_loop_scope = "function"`, чтобы убрать предупреждение `pytest-asyncio` в CI.
+
+## Обновления от 22.03.2026 (CI ручной запуск)
+
+- В `.github/workflows/ci.yml` добавлен триггер `workflow_dispatch`.
+- Теперь CI можно запускать вручную из GitHub Actions на актуальном коммите `main`, без пустых коммитов и без повторного запуска старого failed-run.
