@@ -44,7 +44,7 @@ def _build_gspread_client():
 )
 async def value_plus_one(j):
     try:
-        gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
+        gc = _build_gspread_client()
         sh = gc.open("bot_statistic")
         worksheet = sh.get_worksheet(0)
         worksheet.update(j, str(int(worksheet.acell(j).value) + 1))
@@ -61,7 +61,7 @@ async def value_plus_one(j):
 )
 async def pstat(cell):
     try:
-        gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
+        gc = _build_gspread_client()
         sh = gc.open("bot_statistic")
         worksheet = sh.get_worksheet(0)
         d1 = [
@@ -108,7 +108,7 @@ async def obnulenie_stat(bot):
     champions = []
     try:
         if datetime.now().day == 1 and datetime.now().month != 1:
-            gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
+            gc = _build_gspread_client()
             sh = gc.open("bot_statistic")
             worksheet = sh.get_worksheet(0)
             d1 = [
@@ -177,7 +177,7 @@ async def obnulenie_stat(bot):
             )
             file = FSInputFile(r"gif_mr.Bin.mp4", "rb")
             await bot.send_video(group_id, file)
-            gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
+            gc = _build_gspread_client()
             sh = gc.open("bot_statistic")
             worksheet = sh.get_worksheet(0)
             d1 = [
