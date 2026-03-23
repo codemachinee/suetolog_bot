@@ -8,6 +8,12 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 )  # нужно для норм видимости коневой папки
 
+import paswords
+
+# В CI secrets может не содержать group_id, но для unit-теста он не критичен.
+if not hasattr(paswords, "group_id"):
+    paswords.group_id = -1000000000000
+
 import functions_file
 
 

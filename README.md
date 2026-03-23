@@ -141,6 +141,7 @@
 
 - Тест `tests/test_functions_file.py::test_value_plus_one` переведен с внешнего интеграционного сценария на unit-тест с моками (`gspread`), чтобы CI не зависел от доступности Google API.
 - В `pyproject.toml` добавлен `asyncio_default_fixture_loop_scope = "function"`, чтобы убрать предупреждение `pytest-asyncio` в CI.
+- В `tests/test_functions_file.py` добавлен fallback для `paswords.group_id`, чтобы тесты не падали в CI, если в секретах этот параметр отсутствует.
 
 ## Обновления от 22.03.2026 (CI ручной запуск)
 
