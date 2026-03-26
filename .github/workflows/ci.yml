@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read         # Разрешения на доступ к коду репозитория
@@ -63,11 +64,14 @@ jobs:
 
       - name: Сборка Docker образа
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest .
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest \
+            -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }} .
 
       - name: Push Docker образ в GHCR
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+          docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -84,19 +88,37 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_KEY }}
           script: |
+            set -euo pipefail
+
+            REPO_DIR="/root/suetolog_bot"
+            REPO_URL="https://github.com/${{ github.repository }}.git"
+
+            # Обновляем исходный код на сервере
+            if [ ! -d "$REPO_DIR/.git" ]; then
+              rm -rf "$REPO_DIR"
+              git clone "$REPO_URL" "$REPO_DIR"
+            fi
+
+            cd "$REPO_DIR"
+            git fetch origin
+            git reset --hard ${{ github.sha }}
+
             # Входим в GHCR
-            docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
             # Останавливаем и удаляем старый контейнер, если он есть
             docker rm -f suetolog-bot || true
-            # Полная очистка кэша, образов и ненужных данных
-            docker system prune -af --volumes
-            # Запускаем контейнер
-            docker run --pull=always -d \
-            --name suetolog-bot \
-            -e KINOPHILES_DB_PATH=/data/kinophiles.db \
-            -v /root/suetolog_bot/paswords.py:/app/paswords.py \
-            -v /root/suetolog_bot/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json \
-            -v /root/suetolog_bot/loggs.log:/app/loggs.log \
-            -v /root/suetolog_bot/kinophiles.db:/data/kinophiles.db \
-            ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+            
+            # Очистка неиспользуемых данных (аккуратно, чтобы не снести лишнего)
+            docker system prune -f
+
+            # Запускаем контейнер из образа с конкретным SHA
+            docker run -d \
+              --name suetolog-bot \
+              --restart unless-stopped \
+              -e KINOPHILES_DB_PATH=/data/kinophiles.db \
+              -v "$REPO_DIR/paswords.py:/app/paswords.py:ro" \
+              -v "$REPO_DIR/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json:ro" \
+              -v "$REPO_DIR/loggs.log:/app/loggs.log" \
+              -v "$REPO_DIR/kinophiles.db:/data/kinophiles.db" \
+              ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }}
