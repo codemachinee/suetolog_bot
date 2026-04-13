@@ -112,38 +112,7 @@
 - В `main.py` добавлена безопасная отправка служебных логов, чтобы повторные сетевые ошибки при логировании не валили обработчики.
 - В `kinophiles/handlers.py` обработан кейс `TelegramBadRequest: message is not modified`, чтобы не создавать лишние traceback при повторных нажатиях.
 
-## Обновления от 22.03.2026
+## Обновления от 14.04.2026
 
-- Добавлен `docker-compose.yml` для `suetolog-bot` с подключением к внешней Docker-сети `tg-vpn-net`.
-- В compose-конфиг добавлены необходимые монтирования (`paswords.py`, `pidor-of-the-day-af3dd140b860.json`, `loggs.log`, `kinophiles.db`) и переменная `KINOPHILES_DB_PATH=/data/kinophiles.db`.
-- Проверено, что `docker-compose.yml` корректно валидируется и готов к деплою в сеть `tg-vpn-net`.
-## Обновления от 22.03.2026 (CI/CD)
-
-- Обновлен workflow `.github/workflows/ci.yml`: деплой на VPS переведен на `docker compose`.
-- В deploy-скрипт добавлены:
-  - автоподтягивание актуального `main` на сервере (`git fetch` + `git reset --hard origin/main`),
-  - проверка/создание Docker-сети `tg-vpn-net` (`172.30.10.0/24`),
-  - запуск `suetolog-bot` через `docker compose up -d --build --remove-orphans`.
-- Добавлена постпроверка деплоя в CI: вывод `docker ps` и сетей контейнера `suetolog-bot`.
-- Добавлена авторизация в `ghcr.io` в deploy-шаге (`docker login`), чтобы устранить ошибку `failed to fetch oauth token: denied` при `docker compose build` на сервере.
-
-## Обновления от 22.03.2026 (Сетевые ошибки)
-
-- В `functions_file.py` усилена обработка сбоев Google API:
-  - retry теперь учитывает `requests`-исключения (`RequestException`) и системные сетевые ошибки;
-  - для клиента Google Sheets добавлен сетевой таймаут (`GOOGLE_API_TIMEOUT_SECONDS=20`), чтобы запросы не зависали бесконечно.
-- В `functions_file.py` ошибки в `value_plus_one`, `pstat`, `obnulenie_stat` больше не "глотаются": после логирования исключение пробрасывается выше, что позволяет `tenacity` корректно выполнять повторные попытки.
-- В `main.py` улучшено поведение при сетевых сбоях:
-  - в `pidr` при временной сетевой проблеме отправляется уведомление о проблемах сети в чат;
-  - в `/pidorstat` пользователь получает понятное сообщение о временной недоступности статистики вместо "тихого" зависания.
-
-## Обновления от 22.03.2026 (Тесты CI)
-
-- Тест `tests/test_functions_file.py::test_value_plus_one` переведен с внешнего интеграционного сценария на unit-тест с моками (`gspread`), чтобы CI не зависел от доступности Google API.
-- В `pyproject.toml` добавлен `asyncio_default_fixture_loop_scope = "function"`, чтобы убрать предупреждение `pytest-asyncio` в CI.
-- В `tests/test_functions_file.py` добавлен fallback для `paswords.group_id`, чтобы тесты не падали в CI, если в секретах этот параметр отсутствует.
-
-## Обновления от 22.03.2026 (CI ручной запуск)
-
-- В `.github/workflows/ci.yml` добавлен триггер `workflow_dispatch`.
-- Теперь CI можно запускать вручную из GitHub Actions на актуальном коммите `main`, без пустых коммитов и без повторного запуска старого failed-run.
+- Telegram API переведен на глобальную работу через SOCKS5-прокси (`127.0.0.1:1080`) в сетевой инициализации `Bot` (`AiohttpSession`).
+- В зависимости проекта добавлен пакет `aiohttp-socks` для корректной работы SOCKS5 в `aiogram`/`aiohttp`.

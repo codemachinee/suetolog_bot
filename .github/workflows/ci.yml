@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  packages: write
-  id-token: write
-  actions: read
+  contents: read         # Разрешения на доступ к коду репозитория
+  packages: write        # Разрешения на загрузку пакетов
+  id-token: write        # Разрешения для работы с токенами
+  actions: read          # Разрешения для работы с действиями
 
 jobs:
   test:
@@ -25,7 +25,7 @@ jobs:
         with:
           python-version-file: ".python-version"
 
-      - name: Установка uv
+      - name: установка uv
         uses: astral-sh/setup-uv@v5
 
       - name: Установка зависимостей
@@ -44,7 +44,8 @@ jobs:
           EOF
 
       - name: Запуск тестов
-        run: uv run pytest -v
+        run: |
+          uv run pytest -v
 
   build_and_push_in_GHCR:
     runs-on: ubuntu-latest
@@ -62,17 +63,25 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Сборка Docker образа
-        run: docker build -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest .
+        run: |
+          docker build \
+            -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest \
+            -t ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }} .
 
       - name: Push Docker образ в GHCR
-        run: docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:latest
+          docker push ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push_in_GHCR
 
     steps:
-      - name: Вход на сервер по SSH и деплой через docker compose
+      - name: Checkout репозиторий
+        uses: actions/checkout@v4
+
+      - name: Вход на сервер по SSH и деплой
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VPS_HOST }}
@@ -84,31 +93,32 @@ jobs:
             REPO_DIR="/root/suetolog_bot"
             REPO_URL="https://github.com/${{ github.repository }}.git"
 
+            # Обновляем исходный код на сервере
             if [ ! -d "$REPO_DIR/.git" ]; then
               rm -rf "$REPO_DIR"
               git clone "$REPO_URL" "$REPO_DIR"
             fi
 
             cd "$REPO_DIR"
-            git fetch origin main
-            git reset --hard origin/main
+            git fetch origin
+            git reset --hard ${{ github.sha }}
 
-            if docker compose version >/dev/null 2>&1; then
-              COMPOSE_CMD="docker compose"
-            elif command -v docker-compose >/dev/null 2>&1; then
-              COMPOSE_CMD="docker-compose"
-            else
-              echo "Docker Compose не найден на сервере"
-              exit 1
-            fi
-
-            docker network inspect tg-vpn-net >/dev/null 2>&1 || \
-              docker network create --driver bridge --subnet 172.30.10.0/24 tg-vpn-net
-
+            # Входим в GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
+            # Останавливаем и удаляем старый контейнер, если он есть
             docker rm -f suetolog-bot || true
-            $COMPOSE_CMD -f docker-compose.yml up -d --build --remove-orphans
+            
+            # Очистка неиспользуемых данных (аккуратно, чтобы не снести лишнего)
+            docker system prune -f
 
-            docker ps --filter name=suetolog-bot
-            docker inspect suetolog-bot --format '{{json .NetworkSettings.Networks}}'
+            # Запускаем контейнер из образа с конкретным SHA
+            docker run -d \
+              --name suetolog-bot \
+              --restart unless-stopped \
+              -e KINOPHILES_DB_PATH=/data/kinophiles.db \
+              -v "$REPO_DIR/paswords.py:/app/paswords.py:ro" \
+              -v "$REPO_DIR/pidor-of-the-day-af3dd140b860.json:/app/pidor-of-the-day-af3dd140b860.json:ro" \
+              -v "$REPO_DIR/loggs.log:/app/loggs.log" \
+              -v "$REPO_DIR/kinophiles.db:/data/kinophiles.db" \
+              ghcr.io/${{ github.repository_owner }}/suetolog-bot:${{ github.sha }}

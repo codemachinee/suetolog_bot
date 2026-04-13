@@ -49,12 +49,16 @@ token = major_suetolog
 BOT_API_TIMEOUT_SECONDS = 90
 POLLING_TIMEOUT_SECONDS = 60
 NETWORK_NOTICE_COOLDOWN_SECONDS = 120
+TELEGRAM_PROXY_URL = "socks5://127.0.0.1:1080"
 NETWORK_ISSUE_TEXT = (
     "Сейчас временные проблемы с сетью до Telegram. "
     "Запрос может выполняться дольше обычного, попробуйте повторить через 1-2 минуты."
 )
 
-bot_session = AiohttpSession(timeout=BOT_API_TIMEOUT_SECONDS)
+bot_session = AiohttpSession(
+    proxy=TELEGRAM_PROXY_URL,
+    timeout=BOT_API_TIMEOUT_SECONDS,
+)
 bot = Bot(token=token, session=bot_session)
 dp = Dispatcher()
 main_router = Router()
@@ -290,8 +294,6 @@ async def pidr():
             )
     except Exception as e:
         logger.exception("Ошибка в main/pidr", e)
-        if _is_temporary_network_issue(e):
-            await _notify_network_issue_if_needed(group_id)
         await _safe_send_log_message(f"Ошибка: {e}")
 
 
@@ -543,14 +545,6 @@ async def stat(message, state: FSMContext):
         )
     except Exception as e:
         logger.exception("Ошибка в main/stat", e)
-        if _is_temporary_network_issue(e):
-            await _notify_network_issue_if_needed(message.chat.id)
-        else:
-            await bot.send_message(
-                message.chat.id,
-                "Не удалось получить статистику. Попробуй чуть позже.",
-                request_timeout=BOT_API_TIMEOUT_SECONDS,
-            )
         await _safe_send_log_message(f"Ошибка: {e}")
 
 
@@ -817,4 +811,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.exception("выключение бота")
         asyncio.run(_safe_send_log_message("выключение бота"))
-

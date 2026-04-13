@@ -8,6 +8,7 @@ dependencies = [
     "aiofiles==23.2.1",
     "aiogram==3.2.0",
     "aiohttp==3.9.1",
+    "aiohttp-socks==0.8.4",
     "aiosignal==1.3.1",
     "aiosqlite>=0.20.0",
     "annotated-types==0.6.0",
@@ -101,7 +102,6 @@ disable_error_code = ["import-untyped", "module-name"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"  # Позволяет тестировать асинхронные функции
-asyncio_default_fixture_loop_scope = "function"  # Фиксируем scope event loop для pytest-asyncio
 testpaths = ["tests"]  # Указываем, где искать тесты
 python_files = ["test_*.py"]  # Указываем, какие файлы считаются тестами
 python_classes = ["Test*"]  # Классы, которые pytest воспринимает как тестовые
@@ -113,4 +113,3 @@ markers = [
     "db: тесты, связанные с базой данных",
     "api: тесты, проверяющие API"
 ]
-

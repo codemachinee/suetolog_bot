@@ -6,7 +6,6 @@ from datetime import datetime
 from random import choice
 
 import gspread
-import requests
 from aiogram.types import FSInputFile
 from gspread.exceptions import APIError
 from loguru import logger
@@ -19,49 +18,32 @@ from tenacity import (
 
 from paswords import group_id
 
-GOOGLE_API_TIMEOUT_SECONDS = 20
-RETRYABLE_NETWORK_EXCEPTIONS = (
-    APIError,
-    requests.exceptions.RequestException,
-    ConnectionError,
-    TimeoutError,
-    OSError,
-)
-
-
-def _build_gspread_client():
-    gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
-    if hasattr(gc, "set_timeout"):
-        gc.set_timeout(GOOGLE_API_TIMEOUT_SECONDS)
-    return gc
-
 
 # функция открывает гугл таблицу статистики, начисляет балл и возвращает новое значение
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, max=3),
-    retry=retry_if_exception_type(RETRYABLE_NETWORK_EXCEPTIONS),
+    retry=retry_if_exception_type((APIError, ConnectionError, TimeoutError)),
 )
 async def value_plus_one(j):
     try:
-        gc = _build_gspread_client()
+        gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
         sh = gc.open("bot_statistic")
         worksheet = sh.get_worksheet(0)
         worksheet.update(j, str(int(worksheet.acell(j).value) + 1))
-    except Exception as e:
+    except gspread.exceptions.APIError as e:
         logger.exception("Ошибка в functions_file/value_plus_one", e)
-        raise
 
 
 # функция открывает гугл таблицу статистики и возвращает все значения в отсортированном виде
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, max=3),
-    retry=retry_if_exception_type(RETRYABLE_NETWORK_EXCEPTIONS),
+    retry=retry_if_exception_type((APIError, ConnectionError, TimeoutError)),
 )
 async def pstat(cell):
     try:
-        gc = _build_gspread_client()
+        gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
         sh = gc.open("bot_statistic")
         worksheet = sh.get_worksheet(0)
         d1 = [
@@ -93,22 +75,21 @@ async def pstat(cell):
             f"другие Великие.\nПожелаем ему здоровья, успехов в личной жизни и новыйх побед\n\n"
             f"/help - справка по боту"
         )
-    except Exception as e:
+    except gspread.exceptions.APIError as e:
         logger.exception("Ошибка в functions_file/pstat", e)
-        raise
 
 
 # функция обнуляющая все значения статистики в первый день нового месяца
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, max=3),
-    retry=retry_if_exception_type(RETRYABLE_NETWORK_EXCEPTIONS),
+    retry=retry_if_exception_type((APIError, ConnectionError, TimeoutError)),
 )
 async def obnulenie_stat(bot):
     champions = []
     try:
         if datetime.now().day == 1 and datetime.now().month != 1:
-            gc = _build_gspread_client()
+            gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
             sh = gc.open("bot_statistic")
             worksheet = sh.get_worksheet(0)
             d1 = [
@@ -177,7 +158,7 @@ async def obnulenie_stat(bot):
             )
             file = FSInputFile(r"gif_mr.Bin.mp4", "rb")
             await bot.send_video(group_id, file)
-            gc = _build_gspread_client()
+            gc = gspread.service_account(filename="pidor-of-the-day-af3dd140b860.json")
             sh = gc.open("bot_statistic")
             worksheet = sh.get_worksheet(0)
             d1 = [
@@ -266,9 +247,8 @@ async def obnulenie_stat(bot):
             worksheet.update(
                 "C1:C10", [[0], [0], [0], [0], [0], [0], [0], [0], [0], [0]]
             )
-    except Exception as e:
+    except gspread.exceptions.APIError as e:
         logger.exception("Ошибка в functions_file/obnulenie_stat", e)
-        raise
 
 
 async def celebrate_day():
@@ -336,4 +316,3 @@ async def ball_of_fate():
     elif ball_choice == 11:
         ball_answer = FSInputFile(r"ball/var_eleven.png", "rb")
         return ball_answer
-
